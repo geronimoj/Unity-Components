@@ -29,7 +29,7 @@ public class Conditions
     /// <param name="min">The min value</param>
     /// <param name="max">The maximum value</param>
     /// <returns>Returns true if its in range</returns>
-    public static bool InRage(float value, float min, float max)
+    public static bool InRange(float value, float min, float max)
     {
         if (value >= min && value <= max)
             return true;

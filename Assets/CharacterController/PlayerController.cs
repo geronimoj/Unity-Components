@@ -107,7 +107,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Used for debugging information
     /// </summary>
-    private Vector3 test;
+    private Vector3 moveVec;
 #endif
     /// <summary>
     /// The colliders that should be ignored when moving. This adds child colliders by default
@@ -136,7 +136,7 @@ public class PlayerController : MonoBehaviour
     public void Move(Vector3 dir, bool cancelOnFail = false)
     {   
 #if UNITY_EDITOR
-        test = dir;
+        moveVec = dir;
 #endif
         RaycastHit[] hits;
         //Make sure we have a direction to move in
@@ -278,9 +278,9 @@ public class PlayerController : MonoBehaviour
     {
         colInfo.SetTransform(transform);
         Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, transform.position + test);
-        Gizmos.DrawWireSphere(colInfo.GetUpperPoint() + test, colInfo.Radius);
-        Gizmos.DrawWireSphere(colInfo.GetLowerPoint() + test, colInfo.Radius);
+        Gizmos.DrawLine(transform.position, transform.position + moveVec);
+        Gizmos.DrawWireSphere(colInfo.GetUpperPoint() + moveVec, colInfo.Radius);
+        Gizmos.DrawWireSphere(colInfo.GetLowerPoint() + moveVec, colInfo.Radius);
     }
 #endif
     #endregion
