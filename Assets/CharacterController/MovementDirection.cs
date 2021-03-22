@@ -29,21 +29,27 @@ public struct MovementDirection
     [SerializeField]
     private float maxVert;
     /// <summary>
-    /// Returns or sets the horizontal component of the vector
+    /// Returns or sets the horizontal component of the vector.
+    /// This will be clamped by MaxHozSpeed if it is not 0.
+    /// Can be positive or negative.
+    /// Has no influence over the direction of movement
     /// </summary>
     public float HozSpeed
     {
         get
         {
-            return new Vector3(vec.x, 0, vec.z).magnitude;
+            return Vector3.Dot(dir, new Vector3(vec.x, 0, vec.z));
         }
         set
-        {   //Make sure value is positive
-            if (value < 0)
-                value = 0;
+        {   
             //Make sure value is within range & maxHoz is limited
-            if (maxHoz != 0 && value > maxHoz)
-                value = maxHoz;
+            if (maxHoz != 0)
+            {
+                if (value > maxHoz)
+                    value = maxHoz;
+                if (value < -maxHoz)
+                    value = -maxHoz;
+            }
             //Set the horizontal speed
             Vector3 hozDir = HozDirection;
             vec.x = value * hozDir.x;
@@ -51,7 +57,10 @@ public struct MovementDirection
         }
     }
     /// <summary>
-    /// Returns or sets the vertical component of the vecotr
+    /// Returns or sets the vertical component of the vector.
+    /// This will be clamped by MaxVertSpeed if its not 0.
+    /// Can be positive or negative.
+    /// Has influence over the direction of movement.
     /// </summary>
     public float VertSpeed
     {
@@ -70,11 +79,13 @@ public struct MovementDirection
             }
             //Set the vertical speed
             vec.y = value;
+            //Re-calculate the direction of movement
             Direction = vec.normalized;
         }
     }
     /// <summary>
-    /// Returns or sets the total magnitude of the vector
+    /// Returns the length of the move vector.
+    /// Sets the length of the move vector.
     /// </summary>
     public float TotalSpeed
     {
@@ -93,8 +104,9 @@ public struct MovementDirection
         }
     }
     /// <summary>
-    /// Returns the absolute maximum horizontal speed
-    /// Sets the maximum horizontal speed & clamps
+    /// Returns the absolute maximum horizontal speed.
+    /// Sets the maximum horizontal speed & clamps.
+    /// Set to 0 for no clamp
     /// </summary>
     public float MaxHozSpeed
     {
@@ -114,11 +126,14 @@ public struct MovementDirection
             //Clamp the current horizontal speed if it now exceeds the new max speed
             if (HozSpeed > maxHoz)
                 HozSpeed = maxHoz;
+            if (HozSpeed < -maxHoz)
+                HozSpeed = -maxHoz;
         }
     }
     /// <summary>
-    /// Returns the absolute maximum vertical speed
-    /// Sets the maximum vertical speed & clamps
+    /// Returns the absolute maximum vertical speed.
+    /// Sets the maximum vertical speed & clamps.
+    /// Set to 0 for no clamp.
     /// </summary>
     public float MaxVertSpeed
     {
@@ -153,8 +168,9 @@ public struct MovementDirection
         }
     }
     /// <summary>
-    /// Returns a normalised vector with the same direction
-    /// Sets the direction of the movementDirection
+    /// Returns the forward direction of movement. (Assumes HozSpeed >= 0)
+    /// Sets the direction of the movementDirection.
+    /// Use TrueDirection to get the direction of movement reguardless of HozSpeed.
     /// </summary>
     public Vector3 Direction
     {
@@ -168,11 +184,28 @@ public struct MovementDirection
                 return;
             //Assign the direction
             dir = value.normalized;
+            //If HozSpeed is < 0, then we need to flip the horizontal component to retain the direction
             vec = dir * vec.magnitude;
+
+            if (HozSpeed < 0)
+            {
+                vec.x *= -1;
+                vec.z *= -1;
+            }
+            //Make sure the vector remains clamped
+            ClampVector();
         }
     }
     /// <summary>
-    /// Returns a normalised vector representing the horizontal (x & z) direction of movement
+    /// Returns the current direction of movement.
+    /// This is unaffected by HozSpeed being > or < 0.
+    /// </summary>
+    public Vector3 TrueDirection => vec.normalized;
+    /// <summary>
+    /// Returns a normalised vector representing the forward horizontal (x & z) direction of movement. (Assumes HozSpeed >= 0)
+    /// Sets the forward horizontal direction of movement. Normalizes vector automatically.
+    /// Forwards means: The direction if hozSpeed > 0. If hozSpeed is < 0, the direction will be -forwards.
+    /// Use TrueHozDirection to get the horizontal direction of movement reguardless of HozSpeed.
     /// </summary>
     public Vector3 HozDirection
     {
@@ -186,15 +219,22 @@ public struct MovementDirection
                 return;
             //Set the y to zero so as keep everything normalized
             value.y = 0;
+            //Since the magnitude of hoz or vert speed isn't changing
+            //All we have to do is retain the magnitude of the horizontal component to change the direction. This will result in the new direction still being a unit vector
+                 //Calculate the horizontal component                         //Retain the y component
+            dir = (value.normalized * new Vector3(dir.x, 0, dir.z).magnitude) + new Vector3(0, dir.y, 0);
             //Scale it by speed
             value = value.normalized * HozSpeed;
             //Set vec's x & z components
             vec.x = value.x;
             vec.z = value.z;
-            //Update the direction to be vec but normalized
-            dir = vec.normalized;
         }
     }
+    /// <summary>
+    /// Returns the current horizontal direction of movement.
+    /// This is unaffected by HozSpeed being > or < 0.
+    /// </summary>
+    public Vector3 TrueHozDirection => new Vector3(vec.x, 0, vec.z).normalized;
     /// <summary>
     /// Returns the movement vector with direction and magnitude.
     /// Is Read Only.
@@ -262,5 +302,28 @@ public struct MovementDirection
         else
             //The velocity change is too big so teleport to the target direction
             Direction = final;
+    }
+    /// <summary>
+    /// Clamps the horizontal and vertical components of the move vector
+    /// </summary>
+    private void ClampVector()
+    {
+        float value = VertSpeed;
+        if (maxVert != 0)
+        {   //Clamp the set value between positive and negative max vertical speed
+            if (value > maxVert)
+                VertSpeed = maxVert;
+            if (value < -maxVert)
+                VertSpeed = -maxVert;
+        }
+        value = HozSpeed;
+        //Repeat for horizontal
+        if (maxHoz != 0)
+        {
+            if (value > maxHoz)
+                HozSpeed = maxHoz;
+            if (value < -maxHoz)
+                HozSpeed = -maxHoz;
+        }
     }
 }

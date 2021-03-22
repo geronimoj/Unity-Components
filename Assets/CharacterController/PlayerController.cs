@@ -133,13 +133,14 @@ public class PlayerController : MonoBehaviour
     /// </summary>
     /// <param name="dir">The direction with a magnitude of distance the player should be moved</param>
     /// <param name="cancelOnFail">If true, the player will not be moved if dir is changed</param>
-    public void MoveTo(Vector3 dir, bool cancelOnFail = false)
+    public void Move(Vector3 dir, bool cancelOnFail = false)
     {   
 #if UNITY_EDITOR
         test = dir;
 #endif
         RaycastHit[] hits;
-        //Make sure we have a direction to move in//
+        //Make sure we have a direction to move in
+        //Otherwise just update if we are on the ground
         if (dir != Vector3.zero)
         {
             //Get the collisions
@@ -165,8 +166,8 @@ public class PlayerController : MonoBehaviour
                     Debug.LogError("Could not solve for collision response. Not moving character");
                     return;
                 }
-                //Make sure aren't colliding with ourself
-                if (hits[i].distance != 0 && hits[i].point != Vector3.zero)
+                //Make sure aren't colliding with ourself. This does in turn mean that objects we are too close too cannot be collided with
+                if (hits[i].distance != 0)
                 {
                     float dot = Vector3.Dot(hits[i].normal, dir);
                     //Make sure we are heading into the normal
@@ -203,12 +204,12 @@ public class PlayerController : MonoBehaviour
                         Debug.LogWarning("Too close to surface: " + hits[i].transform.gameObject.name);
                 }
             }
-        }
 #if UNITY_EDITOR
-        //Draw the movement and then move us along it
-        Debug.DrawLine(colInfo.GetLowestPoint(), colInfo.GetLowestPoint() + dir, Color.magenta, 20f);
+            //Draw the movement and then move us along it
+            Debug.DrawLine(colInfo.GetLowestPoint(), colInfo.GetLowestPoint() + dir, Color.magenta, 20f);
 #endif
-        transform.Translate(dir, Space.World);
+            transform.Translate(dir, Space.World);
+        }
         //Do a raycast down to check if we are on the ground
         hits = MoveToRaycasts(colInfo.GravityDirection * 1e-3f, out int _);
         //Loop through the downwards raycast results and check if any of them meet the on ground conditions
@@ -225,6 +226,16 @@ public class PlayerController : MonoBehaviour
             }
         //Set us to not be on the ground. We can only hit this if the previous checks failed
         colInfo.OnGround = false;
+    }
+    /// <summary>
+    /// Moves the player. Contains all collision detection required.
+    /// OBSELETE. Use Move instead. Updating function names. Only exists to not break code
+    /// </summary>
+    /// <param name="dir">The direction with a magnitude of distance the player should be moved</param>
+    /// <param name="cancelOnFail">If true, the player will not be moved if dir is changed</param>
+    public void MoveTo(Vector3 dir, bool cancelOnFail = false)
+    {
+        Move(dir, cancelOnFail);
     }
     /// <summary>
     /// Performs the raycasts to detect collisions for MoveTo
