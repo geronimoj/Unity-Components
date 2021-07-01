@@ -31,7 +31,7 @@ namespace FInput
                     _thisFrameInputs = null;
                     return;
                 }
-                
+
                 //Store the last updates inputs
                 _lastFrameInputs = _thisFrameInputs;
                 //Set this frames updates
@@ -51,13 +51,8 @@ namespace FInput
             get
             {   //Check if there is a replay
                 if (_thisFrameInputs != null)
-                {   //If so check for any inputs
-                    if (_thisFrameInputs.Count > 0)
-                        //If there is at least 1, return true
-                        return true;
-                    //Otherwise false
-                    return false;
-                }
+                    //If so check for any inputs
+                    return _thisFrameInputs.Count > 0;
                 //If there is no replay, return normal Input.anyKey
                 return Input.anyKey;
             }
@@ -81,7 +76,7 @@ namespace FInput
                         return true;
                     //With the two easiest checks out of the way, 
                     //we need to check if thisFrameInputs contains a new input
-                    foreach(KeyCode key in _thisFrameInputs)
+                    foreach (KeyCode key in _thisFrameInputs)
                     {   //Check if the last frames inputs contained the keyCode
                         if (!_lastFrameInputs.Contains(key))
                             //If not, we got a new input so return true
@@ -101,7 +96,7 @@ namespace FInput
         /// <returns>The value of the axis</returns>
         public static float GetAxis(string axis)
         {   //Make sure there are axis values to read
-            if (ReplayedAxisValues != null 
+            if (ReplayedAxisValues != null
                 //Check if the axis is contained
                 && ReplayedAxisValues.ContainsKey(axis))
                 //If so, return the axis from the replay
@@ -134,19 +129,43 @@ namespace FInput
             //Otherwise return Input.GetAxis
             return Input.GetAxisRaw(axis);
         }
-
+        /// <summary>
+        /// Returns true if the key was just pressed. Prioritieses the replay if one is being played.
+        /// </summary>
+        /// <param name="key">The key to check</param>
+        /// <returns>Returns true if the key was just pressed</returns>
         public static bool GetKeyDown(KeyCode key)
-        {   //Default to unity GetKey
+        {   //Check if there is a replay
+            if (_thisFrameInputs != null)
+                //If so, check if the current update had the keycode but the previous one did not
+                return !_lastFrameInputs.Contains(key) && _thisFrameInputs.Contains(key);
+            //Default to unity GetKey
             return Input.GetKeyDown(key);
         }
-
+        /// <summary>
+        /// Returns true if the key is being pressed. Prioritieses the replay if one is being played.
+        /// </summary>
+        /// <param name="key">The key to check</param>
+        /// <returns>Returns true if the key is being pressed</returns>
         public static bool GetKey(KeyCode key)
-        {   //Default to unity GetKey
+        {   //Null catch. Also determines if a replay is playing
+            if (_thisFrameInputs != null)
+                //Return true if this frames inputs contains the keyCode
+                return _thisFrameInputs.Contains(key);
+            //Default to unity GetKey
             return Input.GetKey(key);
         }
-
+        /// <summary>
+        /// Returns true if the key was just released. Prioritieses the replay if one is being played.
+        /// </summary>
+        /// <param name="key">The key to check</param>
+        /// <returns>Returns true if the key was just released</returns>
         public static bool GetKeyUp(KeyCode key)
-        {   //Default to unity GetKey
+        {   //Check if there is a replay
+            if (_thisFrameInputs != null)
+                //Same as GetKeyDown but inverted
+                return _lastFrameInputs.Contains(key) && !_thisFrameInputs.Contains(key);
+            //Default to unity GetKey
             return Input.GetKeyUp(key);
         }
     }
