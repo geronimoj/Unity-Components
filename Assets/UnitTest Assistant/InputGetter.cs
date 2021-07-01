@@ -1,5 +1,4 @@
-﻿using System.Collections.ObjectModel;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace FInput
@@ -41,7 +40,7 @@ namespace FInput
         /// <summary>
         /// The values for the axis that were read from the InputReplayer.
         /// </summary>
-        public static ReadOnlyDictionary<string, float> ReplayedAxisValues { set; internal get; } = null;
+        public static Dictionary<string, float> ReplayedAxisValues { set; internal get; } = null;
         /// <summary>
         /// Returns true if any key has been pressed. Will priorities reading from a replayed input if one is playing.
         /// </summary>
