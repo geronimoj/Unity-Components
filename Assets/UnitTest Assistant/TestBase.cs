@@ -31,7 +31,7 @@ namespace TestAssistant
                     UnityEngine.Object.DestroyImmediate(obj);
             }
             catch (Exception e)
-            {   //Something went wrong, probably casting the results
+            {   //Something went wrong, probably casting the results of FindObjectsOfType
                 Debug.LogError("Failed to destroy all GameObjects: " + e.ToString());
             }
         }
