@@ -93,6 +93,8 @@ namespace Replay
         {   //Only bother if we are playing
             if (!IsPlaying)
                 return;
+            //We decifer each line on a as need basis since its not too expensive
+            //It also saves a bit of load time.
             //Convert it to a string
             string[] inputs = _inputs[0].Split(':');
             //Create a new list to store the inputs. Not efficient since this will be done every frame but its ok for now I suppose
