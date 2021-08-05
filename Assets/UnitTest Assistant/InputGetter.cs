@@ -41,10 +41,12 @@ namespace FInput
         /// The values for the axis that were read from the InputReplayer.
         /// </summary>
         public static Dictionary<string, float> ReplayedAxisValues { set; internal get; } = null;
+
+
         /// <summary>
         /// Returns true if any key has been pressed. Will priorities reading from a replayed input if one is playing.
         /// </summary>
-        //Yes, VS calls this a naming rule violation but we want it to be identical to Unitys Input
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
         public static bool anyKey
         {
             get
@@ -59,7 +61,7 @@ namespace FInput
         /// <summary>
         /// Returns true the first frame any key was pressed down. Will priorities reading from a replayed input if one is playing.
         /// </summary>
-        //Yes, VS calls this a naming rule violation but we want it to be identical to Unitys Input
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE1006:Naming Styles", Justification = "<Pending>")]
         public static bool anyKeyDown
         {
             get
