@@ -39,7 +39,7 @@ namespace InputRecording.NewInputSystem
                 //If it was successful, subscribe to the input system event
                 InputSystem.onEvent += RecordEvent;
             }//Otherwise log an error
-            catch(System.Exception e) { Debug.LogError("Failed to open StreamWriter to given file. " + e.ToString());  }
+            catch (System.Exception e) { Debug.LogError("Failed to open StreamWriter to given file. " + e.ToString()); }
         }
         /// <summary>
         /// Records an input from a device
@@ -48,7 +48,7 @@ namespace InputRecording.NewInputSystem
         /// <param name="device"></param>
         private void RecordEvent(InputEventPtr eventPtr, InputDevice device)
         {   //Make sure the eventPtr is a stateEvent                                                                                                                                            
-            if (!eventPtr.IsA<StateEvent>() && !eventPtr.IsA<DeltaStateEvent>())
+            if ((!eventPtr.IsA<StateEvent>() && !eventPtr.IsA<DeltaStateEvent>()) || _fileWriter == null)
                 return;
             //Check if the device is a gamepad
             if (device is Gamepad gamepad)
@@ -85,7 +85,7 @@ namespace InputRecording.NewInputSystem
             {
                 string inputs = (eventPtr.time - _startTime).ToString() + "|" + device.deviceId + "|";
 
-                inputs += "A[" + keyboard.aKey.ReadValue() +"]|";
+                inputs += "A[" + keyboard.aKey.ReadValue() + "]|";
                 //Write the line to the file
                 _fileWriter.WriteLine(inputs);
             }
@@ -98,11 +98,7 @@ namespace InputRecording.NewInputSystem
             InputSystem.onEvent -= RecordEvent;
             //Save data to text file
             _fileWriter.Close();
-        }
-
-        private void OnDisable()
-        {
-            StopRecording();
+            _fileWriter = null;
         }
     }
 }
