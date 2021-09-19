@@ -12,7 +12,11 @@ namespace CustomPhysics.Joints
     [DefaultExecutionOrder(100)]
     public class GrappleJoint : MonoBehaviour
     {
-        private Rigidbody _rb = null;
+        /// <summary>
+        /// The rigidbody we are connected to
+        /// </summary>
+        [SerializeField]
+        private Rigidbody _rigidBody = null;
         /// <summary>
         /// The point we are anchored to
         /// </summary>
@@ -66,13 +70,16 @@ namespace CustomPhysics.Joints
         /// <summary>
         /// Gets reference to the rigidbody
         /// </summary>
+        [ContextMenu("Auto Setup")]
         private void Awake() =>
-            _rb = GetComponent<Rigidbody>();
-
+            _rigidBody = GetComponent<Rigidbody>();
+        /// <summary>
+        /// Updates the movement vector of the rigid body
+        /// </summary>
         private void FixedUpdate()
         {
             //Calculate if our movement would overshoot the radius (we go further away than the max radius)
-            Vector3 newPoint = transform.position + _rb.velocity * Time.fixedDeltaTime;
+            Vector3 newPoint = transform.position + _rigidBody.velocity * Time.fixedDeltaTime;
             //This is tehcniqually memory inefficient as we don't use toAnchor unless dist > maxRadius however it is ever so faster on the CPU not having to calculate the same vector twice
             Vector3 toAnchor = _anchorPoint - newPoint;
             float dist = toAnchor.magnitude;
@@ -83,7 +90,7 @@ namespace CustomPhysics.Joints
                 //Calcualte the force to apply to the rigidbody
                 toAnchor = toAnchor.normalized * overShoot;
                 //UPODATE
-                _rb.velocity += toAnchor / Time.fixedDeltaTime;
+                _rigidBody.velocity += toAnchor / Time.fixedDeltaTime;
             }
             //If not, if _autoShrinkRadius is true, re-calculate the distance
             else if (_autoShrinkRadius)
