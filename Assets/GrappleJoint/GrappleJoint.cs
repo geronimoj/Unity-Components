@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using System;
+﻿using UnityEngine;
 
 namespace CustomPhysics.Joints
 {
@@ -9,7 +6,7 @@ namespace CustomPhysics.Joints
     /// Custom joint for use with grappling
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
-    [DefaultExecutionOrder(100)]
+    [DefaultExecutionOrder(1000)]
     public class GrappleJoint : MonoBehaviour
     {
         /// <summary>
@@ -110,10 +107,10 @@ namespace CustomPhysics.Joints
             float dist = toAnchor.magnitude;
             //If so, apply a force towards the anchor point that results in us ending our movment on the edge of the radius
             if (dist > _maxRadius)
-            {   //Calculate how much we over shot the raidus
-                float overShoot = dist - _maxRadius;
-                //Calcualte the force to apply to the rigidbody
-                toAnchor = toAnchor.normalized * overShoot;
+            {   //Calcualte the force to apply to the rigidbody
+                toAnchor = toAnchor.normalized
+                    //Calculate how much we over shot the radius
+                    * (dist - _maxRadius);
                 //UPODATE
                 _rigidBody.velocity += toAnchor / Time.fixedDeltaTime;
             }
