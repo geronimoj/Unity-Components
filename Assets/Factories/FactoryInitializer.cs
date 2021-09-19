@@ -1,13 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace Factories
 {
     /// <summary>
-    /// Initializes all factories in resources. This doesn't even need to be created in a scene!
+    /// Initializes all factories in Resources/Factories. This doesn't even need to be created in a scene!
     /// </summary>
-    [DefaultExecutionOrder(-1000)]
+    [DefaultExecutionOrder(-10000)]
     public sealed class FactoryInitializer
     {
         /// <summary>
