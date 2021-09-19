@@ -1,23 +1,24 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using StateMachine.States;
 
-public class If_ElseTransition : Transition
+namespace StateMachine.Transitions
 {
-    public State ifState;
-    public State elseState;
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public class If_ElseTransition<T> : Transition<T>
     {
-        if (Condition(ref ctrl))
-            targetState = ifState;
-        else
-            targetState = elseState;
+        public State<T> ifState;
+        public State<T> elseState;
+        public override bool ShouldTransition(ref T ctrl)
+        {
+            if (Condition(ref ctrl))
+                targetState = ifState;
+            else
+                targetState = elseState;
 
-        return true;
-    }
+            return true;
+        }
 
-    protected virtual bool Condition(ref PlayerController ctrl)
-    {
-        return false;
+        protected virtual bool Condition(ref T ctrl)
+        {
+            return false;
+        }
     }
 }
