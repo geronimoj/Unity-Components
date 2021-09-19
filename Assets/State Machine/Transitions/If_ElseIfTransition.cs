@@ -1,20 +1,26 @@
-﻿using StateMachine.States;
+﻿using UnityEngine;
+using StateMachine.States;
 
 namespace StateMachine.Transitions
 {
     /// <summary>
     /// A transition for a If_ElseIf transition requirements
     /// </summary>
-    public class If_ElseIfTransition<T> : Transition<T>
+    /// <typeparam name="T">Any type</typeparam>
+    public abstract class If_ElseIfTransition<T> : Transition<T>
     {
         /// <summary>
         /// The state to swap to if the if passes
         /// </summary>
-        public State<T> ifState;
+        [SerializeField]
+        [Tooltip("The state to swap to if the first condition passes")]
+        private State<T> _ifState = null;
         /// <summary>
         /// The state to swap to if the elseIf passes
         /// </summary>
-        public State<T> elseIfState;
+        [SerializeField]
+        [Tooltip("The state to swap to if the second condition passes")]
+        private State<T> _elseIfState = null;
 
         public override bool ShouldTransition(ref T ctrl)
         {   //Perform any universal checks that both IfCondition and elseIfCondition may want
@@ -23,13 +29,13 @@ namespace StateMachine.Transitions
             //Check if condition
             if (IfCondition(ref ctrl))
             {
-                targetState = ifState;
+                targetState = _ifState;
                 return true;
             }
             //Check elseIf condition
             else if (IfElseCondition(ref ctrl))
             {
-                targetState = elseIfState;
+                targetState = _elseIfState;
                 return true;
             }
             //Return false
@@ -46,13 +52,13 @@ namespace StateMachine.Transitions
         /// </summary>
         /// <param name="c">A reference to the player controller</param>
         /// <returns>Returns true if the condition is met</returns>
-        protected virtual bool IfCondition(ref T c) { return false; }
+        protected abstract bool IfCondition(ref T c);
 
         /// <summary>
         /// The check for the elseIfState
         /// </summary>
         /// <param name="c">A reference to the player controller</param>
         /// <returns>Returns true if the condition is met</returns>
-        protected virtual bool IfElseCondition(ref T c) { return false; }
+        protected abstract bool IfElseCondition(ref T c);
     }
 }

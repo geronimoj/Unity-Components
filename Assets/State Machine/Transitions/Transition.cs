@@ -6,7 +6,7 @@ namespace StateMachine.Transitions
     /// <summary>
     /// The base transition. All transitions inherit from this class
     /// </summary>
-    public class Transition<T> : ScriptableObject
+    public abstract class Transition<T> : ScriptableObject
     {
         /// <summary>
         /// The state we should transition to if this transition returns true
@@ -17,6 +17,6 @@ namespace StateMachine.Transitions
         /// </summary>
         /// <param name="ctrl">A reference to the player controller</param>
         /// <returns>Returns false by default</returns>
-        public virtual bool ShouldTransition(ref T ctrl) { return false; }
+        public abstract bool ShouldTransition(ref T ctrl);
     }
 }

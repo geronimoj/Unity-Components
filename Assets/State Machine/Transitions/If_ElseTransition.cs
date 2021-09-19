@@ -1,24 +1,40 @@
-﻿using StateMachine.States;
+﻿using UnityEngine;
+using StateMachine.States;
 
 namespace StateMachine.Transitions
 {
-    public class If_ElseTransition<T> : Transition<T>
+    /// <summary>
+    /// Transition that compares a condition to determine which state to change to. This transition will always pass
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public abstract class If_ElseTransition<T> : Transition<T>
     {
-        public State<T> ifState;
-        public State<T> elseState;
+        /// <summary>
+        /// The state that will be swapped to if the condition succeeds
+        /// </summary>
+        [SerializeField]
+        [Tooltip("The state that will be swapped to if the condition succeeds")]
+        private State<T> _ifState = null;
+        /// <summary>
+        /// The state that will be swaped to if the condition fails
+        /// </summary>
+        [SerializeField]
+        [Tooltip("The state that will be swaped to if the condition fails")]
+        private State<T> _elseState = null;
         public override bool ShouldTransition(ref T ctrl)
-        {
+        {   //Check the condition
             if (Condition(ref ctrl))
-                targetState = ifState;
+                targetState = _ifState;
             else
-                targetState = elseState;
+                targetState = _elseState;
 
             return true;
         }
-
-        protected virtual bool Condition(ref T ctrl)
-        {
-            return false;
-        }
+        /// <summary>
+        /// Checks if the if State should be transitioned to
+        /// </summary>
+        /// <param name="ctrl">Reference to the object</param>
+        /// <returns>Returns true if the ifState should be returned to</returns>
+        protected abstract bool Condition(ref T ctrl);
     }
 }

@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using StateMachine.Transitions;
 
 namespace StateMachine.States
@@ -10,11 +11,14 @@ namespace StateMachine.States
     {   /// <summary>
         /// The transitions this state should check
         /// </summary>
+        [Tooltip("The transitions for this state")]
         public Transition<T>[] transitions;
         /// <summary>
         /// Any transitions this state should ignore
         /// </summary>
-        public bool[] IgnoreTransitions;
+        [SerializeField]
+        [Tooltip("The transitions that should be ignored upon entering the state")]
+        private bool[] IgnoreTransitions;
         /// <summary>
         /// Any transitions this state should ignore
         /// </summary>
@@ -64,11 +68,28 @@ namespace StateMachine.States
         /// </summary>
         /// <param name="ctrl">A reference to the player controller</param>
         protected virtual void StateEnd(ref T ctrl) { }
-
+        /// <summary>
+        /// Re-enabled all transitions
+        /// </summary>
         protected void ReEnableTransitions()
         {
             for (int i = 0; i < ignoreTransition.Length; i++)
                 ignoreTransition[i] = false;
         }
+        /// <summary>
+        /// Toggles the state of a transition
+        /// </summary>
+        /// <param name="transition">The type of transition to change the state of</param>
+        /// <param name="enabled">The on/off state to set the transition to</param>
+        public void ToggleTransition(Type transition, bool enabled)
+        {   //Loop over the transitions
+            for (uint i = 0; i < transitions.Length; i++)
+                //Compare type to determine if it should be disabled
+                if (transitions[i].GetType() == transition)
+                    //Ignore the transition.
+                    //We could break here but I'd rather continue for other transitions of same type
+                    ignoreTransition[i] = enabled;
+        }
+
     }
 }

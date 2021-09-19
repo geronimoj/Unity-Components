@@ -12,32 +12,38 @@ namespace StateMachine
         /// <summary>
         /// A reference to the previous state in case we want to return to it
         /// </summary>
-        public State<T> previous;
+        [SerializeField]
+        [Tooltip("The previous state. For help debugging.")]
+        private State<T> _previous = null;
+        /// <summary>
+        /// Reference to the previous active state
+        /// </summary>
+        public State<T> Previous => _previous;
         /// <summary>
         /// The current state
         /// </summary>
-        public State<T> current;
+        public State<T> current = null;
         /// <summary>
         /// The state we want to swap to. This is only public for debugging purposes
         /// </summary>
-        public State<T> target;
+        public State<T> target = null;
         /// <summary>
         /// These transitions will always be checked reguardless as to what state we are currently in
         /// </summary>
-        public Transition<T>[] globalTransitions;
+        public Transition<T>[] globalTransitions = new Transition<T>[0];
         /// <summary>
         /// Used to determine when the state machine is first run.
         /// </summary>
-        private bool start = false;
+        private bool _start = false;
         /// <summary>
         /// Checks the transitions, swaps the current state if any return true.
         /// Then updates the current state if we have one
         /// </summary>
         public void DoState(ref T ctrl)
         {   //Represents the start function
-            if (!start)
+            if (!_start)
             {
-                start = true;
+                _start = true;
                 if (current != null)
                     current.State_Start(ref ctrl);
             }
@@ -93,7 +99,7 @@ namespace StateMachine
             //Call end on our current state
             current.State_End(ref ctrl);
             //Swap our states around
-            previous = current;
+            _previous = current;
             current = target;
             target = null;
             //call state on our new state
