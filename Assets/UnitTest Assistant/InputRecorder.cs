@@ -50,12 +50,15 @@ namespace InputRecording.NewInputSystem
         {   //Make sure the eventPtr is a stateEvent                                                                                                                                            
             if ((!eventPtr.IsA<StateEvent>() && !eventPtr.IsA<DeltaStateEvent>()) || _fileWriter == null)
                 return;
+
+            bool gotInput = false;
+            //Setup storage location for this events data
+            string inputs = (eventPtr.time - _startTime).ToString() + "|" + device.deviceId + "|";
             //Check if the device is a gamepad
             if (device is Gamepad gamepad)
             {   //If so, record its inputs
                 //Inputs can be read using gamepad.(button).ReadValue();
                 //Write the time and the ID of the device this is from
-                string inputs = (eventPtr.time - _startTime).ToString() + "|" + device.deviceId + "|";
                 //Loop over the buttons
                 float value;
                 foreach (GamepadButton button in s_recordedGamepadButtons)
@@ -77,18 +80,20 @@ namespace InputRecording.NewInputSystem
                 //Repeat for right stick
                 axisValue = gamepad.rightStick.ReadValue();
                 inputs += "RStick[" + axisValue.x + "," + axisValue.y + "]|";
-                //Write the line to the file
-                _fileWriter.WriteLine(inputs);
+                //Got an input
+                gotInput = true;
             }
 
             if (device is Keyboard keyboard)
             {
-                string inputs = (eventPtr.time - _startTime).ToString() + "|" + device.deviceId + "|";
-
                 inputs += "A[" + keyboard.aKey.ReadValue() + "]|";
+                //Got an input
+                gotInput = true;
+            }
+
+            if (gotInput)
                 //Write the line to the file
                 _fileWriter.WriteLine(inputs);
-            }
         }
         /// <summary>
         /// Stops recording the inputs
