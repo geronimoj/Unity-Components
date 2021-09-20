@@ -25,9 +25,9 @@ namespace StateMachine.States
         [HideInInspector]
         public bool[] ignoreTransition;
         /// <summary>
-        /// The initial Start call. For anything that needs to be called globally across all transitions
+        /// The initial Start call. For anything that needs to be called globally across all states
         /// </summary>
-        /// <param name="c">A reference to the player controller</param>
+        /// <param name="c">A reference to the object</param>
         public void State_Start(ref T c)
         {
             ignoreTransition = new bool[IgnoreTransitions.Length];
@@ -38,36 +38,62 @@ namespace StateMachine.States
             StateStart(ref c);
         }
         /// <summary>
-        /// The initial Update call. For anything that needs to be called globally across all transitions
+        /// The initial Update call. For anything that needs to be called globally across all states
         /// </summary>
-        /// <param name="c">A reference to the player controller</param>
+        /// <param name="c">A reference to the object</param>
         public void State_Update(ref T c)
         {
             StateUpdate(ref c);
         }
         /// <summary>
-        /// The initial End call. For anything that needs to be called globally across all transitions
+        /// The initial End call. For anything that needs to be called globally across all states
         /// </summary>
-        /// <param name="c">A reference to the player controller</param>
+        /// <param name="c">A reference to the object</param>
         public void State_End(ref T c)
         {
             StateEnd(ref c);
         }
         /// <summary>
+        /// The initial call for every Fixed Update. For anything that needs to be called globally across all states
+        /// </summary>
+        /// <param name="c">A reference to the object</param>
+        public void State_Fixed(ref T c)
+        {
+            StateFixedUpdate(ref c);
+        }
+        /// <summary>
+        /// The initial call for every Late Update. For anything that needs to be called globally across all states
+        /// </summary>
+        /// <param name="c">A reference to the object</param>
+        public void State_Late(ref T c)
+        {
+            StateLateUpdate(ref c);
+        }
+        /// <summary>
         /// Called when the state is entered
         /// </summary>
-        /// <param name="ctrl">A reference to the player controller</param>
-        protected virtual void StateStart(ref T ctrl) { }
+        /// <param name="obj">A reference to the object</param>
+        protected virtual void StateStart(ref T obj) { }
         /// <summary>
         /// Called while the state is the current state
         /// </summary>
-        /// <param name="ctrl">A reference to the player controller</param>
-        protected virtual void StateUpdate(ref T ctrl) { Debug.Log("No State"); }
+        /// <param name="obj">A reference to the object</param>
+        protected virtual void StateUpdate(ref T obj) { Debug.Log("No State"); }
         /// <summary>
         /// Called when the state is exited
         /// </summary>
-        /// <param name="ctrl">A reference to the player controller</param>
-        protected virtual void StateEnd(ref T ctrl) { }
+        /// <param name="obj">A reference to the object</param>
+        protected virtual void StateEnd(ref T obj) { }
+        /// <summary>
+        /// Called while the state is the current state
+        /// </summary>
+        /// <param name="obj">A reference to the object</param>
+        protected virtual void StateFixedUpdate(ref T obj) { }
+        /// <summary>
+        /// Called while the state is the current state
+        /// </summary>
+        /// <param name="obj">A reference to the object</param>
+        protected virtual void StateLateUpdate(ref T obj) { }
         /// <summary>
         /// Re-enabled all transitions
         /// </summary>
