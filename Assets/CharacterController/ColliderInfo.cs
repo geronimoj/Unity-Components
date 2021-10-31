@@ -12,6 +12,10 @@ public struct ColliderInfo
     /// </summary>
     private Transform origin;
     /// <summary>
+    /// The collider for this collider :P
+    /// </summary>
+    private CapsuleCollider collider;
+    /// <summary>
     /// The radius of the capsual
     /// </summary>
     [SerializeField]
@@ -80,7 +84,15 @@ public struct ColliderInfo
     {
         origin = t;
         //Spit out an error if the transform is invalid
-        CheckValidTransform();
+        if (CheckValidTransform())
+        {
+            GameObject col = new GameObject("Collider", new System.Type[] { typeof(CapsuleCollider) });
+            //Get collider and set parent
+            collider = col.GetComponent<CapsuleCollider>();
+            col.transform.parent = origin;
+            //Update the collider
+            UpdateCollider();
+        }
     }
     /// <summary>
     /// Gets or Sets the Orientation. If Orientation is zero, -Gravity will be returned instead
@@ -103,6 +115,8 @@ public struct ColliderInfo
         set
         {
             orientation = value.normalized;
+            //Update the collider. This is necessary since, if lowerHeight + upperHeight are not the same, we are going to have a new position
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -119,6 +133,8 @@ public struct ColliderInfo
         set
         {
             gravityDir = value.normalized;
+            //Gravity is used for orientation if orientation is 0
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -133,6 +149,8 @@ public struct ColliderInfo
         set
         {
             posOffset = value;
+            //Self explanitory
+            UpdateCollider();
         }
     }
 
@@ -231,6 +249,8 @@ public struct ColliderInfo
             if (value < 0)
                 value = 0;
             radius = value;
+            //
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -256,6 +276,7 @@ public struct ColliderInfo
         set
         {
             upperHeight = value;
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -271,6 +292,7 @@ public struct ColliderInfo
         set
         {
             lowerHeight = value;
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -300,6 +322,7 @@ public struct ColliderInfo
             if (value < 0)
                 value = 0.01f;
             collisionOffset = value;
+            UpdateCollider();
         }
     }
     /// <summary>
@@ -338,7 +361,11 @@ public struct ColliderInfo
     public bool PositionOffsetIsGlobal
     {
         get { return positionOffsetIsGlobal; }
-        set { positionOffsetIsGlobal = value; }
+        set
+        {
+            positionOffsetIsGlobal = value;
+            UpdateCollider();
+        }
     }
     /// <summary>
     /// Toggle whether orientation is global
@@ -346,7 +373,11 @@ public struct ColliderInfo
     public bool OrientationIsGlobal
     {
         get { return rotationIsGlobal; }
-        set { rotationIsGlobal = value; }
+        set
+        {
+            rotationIsGlobal = value;
+            UpdateCollider();
+        }
     }
     /// <summary>
     /// Determines if a slope given by a normal can be stood on or is too steep
@@ -500,6 +531,14 @@ public struct ColliderInfo
         return GetOriginPosition() + (Orientation * dot);
     }
 
+    private void UpdateCollider()
+    {   //Apply height, offset, rotation & scale.
+        collider.radius = TrueRadius;
+        collider.height = Height;
+        //Get a point from the top of the collider and move it down by half the height
+        collider.transform.position = GetHighestPoint() - Orientation * (Height / 2);
+        collider.transform.rotation = Quaternion.LookRotation(collider.transform.forward, Orientation);
+    }
 
     #region Static Functions
     /// <summary>
@@ -607,7 +646,7 @@ public struct ColliderInfo
             return false;
         //Loop through the results to find the first valid result and return it
         for (int i = 0; i < h.Length; i++)
-            if(h[i].distance != 0)
+            if (h[i].distance != 0)
             {
                 hit = h[i];
                 return true;
