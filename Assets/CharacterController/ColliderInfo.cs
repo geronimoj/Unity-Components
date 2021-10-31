@@ -530,8 +530,10 @@ public struct ColliderInfo
         //Move the origin of the collider along orientation by the dot to get the point it would hit
         return GetOriginPosition() + (Orientation * dot);
     }
-
-    private void UpdateCollider()
+    /// <summary>
+    /// Updates the location of the Collider in the game scene
+    /// </summary>
+    public void UpdateCollider()
     {   //Apply height, offset, rotation & scale.
         collider.radius = TrueRadius;
         collider.height = Height;
