@@ -15,8 +15,6 @@ namespace CustomController
         /// </summary>
         public T colInfo;
 
-        public T test;
-
         #region Movement
         public MovementDirection direction;
         /// <summary>
