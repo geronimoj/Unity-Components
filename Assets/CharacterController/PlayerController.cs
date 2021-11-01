@@ -5,15 +5,19 @@ using UnityEngine;
 namespace CustomController
 {
     /// <summary>
+    /// A Controller with the CapsualCollider as its type of collider
+    /// </summary>
+    public class PlayerController : Controller<CapsualCollider> { }
+    /// <summary>
     /// Contains all the information for the player. Contains code that should be used to Move and rotate the player
     /// </summary>
     /// <remarks>Optional Defines: COLLISION_CALL_IMMEDIATE - Determines if to invoke OnCollision event after calculating for collisions or while</remarks>
-    public class PlayerController<T> : MonoBehaviour where T: ColliderInfo
+    public class Controller<T> : MonoBehaviour where T : ColliderInfo
     {
         /// <summary>
         /// The collider used for this PlayerController
         /// </summary>
-        public T colInfo;
+        public T colInfo = null;
 
         #region Movement
         public MovementDirection direction;
@@ -110,7 +114,7 @@ namespace CustomController
         /// <summary>
         /// Used for debugging information
         /// </summary>
-        private Vector3 moveVec;
+        private Vector3 moveVec = Vector3.zero;
 #endif
         /// <summary>
         /// The colliders that should be ignored when moving. This adds child colliders by default
@@ -213,7 +217,8 @@ namespace CustomController
                                 _collidedWith.Add(hits[i]);
 #if COLLISION_CALL_IMMEDIATE
                                 //Invoke the event
-                                OnCollision.Invoke(this, hits[i]);
+                                if (OnCollision != null)
+                                    OnCollision.Invoke(this, hits[i]);
 #endif
                             }
                             else
@@ -241,9 +246,9 @@ namespace CustomController
 #if !COLLISION_CALL_IMMEDIATE
 
                 if (OnCollision != null)
-                //Invoke the event afterwards
-                for (i = 0; i < hits.Length; i++)
-                    OnCollision.Invoke(this, hits[i]);
+                    //Invoke the event afterwards
+                    for (i = 0; i < hits.Length; i++)
+                        OnCollision.Invoke(this, hits[i]);
 #endif
 
             }
