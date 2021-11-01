@@ -8,12 +8,14 @@ namespace CustomController
     /// Contains all the information for the player. Contains code that should be used to Move and rotate the player
     /// </summary>
     /// <remarks>Optional Defines: COLLISION_CALL_IMMEDIATE - Determines if to invoke OnCollision event after calculating for collisions or while</remarks>
-    public class PlayerController : MonoBehaviour
+    public class PlayerController<T> : MonoBehaviour where T: ColliderInfo
     {
         /// <summary>
         /// The collider used for this PlayerController
         /// </summary>
-        public ColliderInfo colInfo;
+        public T colInfo;
+
+        public T test;
 
         #region Movement
         public MovementDirection direction;
@@ -194,18 +196,19 @@ namespace CustomController
                         {   //If we can't move there, exit if this bool is true
                             if (cancelOnFail)
                                 return;
-                            //Get a vector from the point, to our raycast origin
-                            Vector3 curNew = colInfo.GetCenteralPoint(hits[i].point, hits[i].normal) - hits[i].point;
+
+                            //Get a vector from the point we collided with, to he closest point on the surface of the collider
+                            Vector3 curNew = colInfo.GetClosestPoint(hits[i].point, hits[i].normal) - hits[i].point;
                             //Get the dot product against the normal (its literally dot that we calculated earlier but positive)
-                            dot = Vector3.Project(dir, hits[i].normal).magnitude;
+                            dot = Mathf.Abs(dot);
                             //Subtract the dot product from are calculated vector to only get the overshooting amount.
-                            dot -= Vector3.Project(curNew, hits[i].normal).magnitude;
-                            float dist = colInfo.Radius + colInfo.CollisionOffset;
+                            dot -= Vector3.Dot(curNew, hits[i].normal);
                             //One last check that we 100% are definately colliding with the surface
-                            if (dot > -dist)
+                            //If Dot is < 0, then we would be moved into the wall rather than away.
+                            if (dot > 0)
                             {
                                 //We then apply this as a vector along the normal of the hit surface with a bit of extra stuff to adjust the movement vector away from the wall
-                                dir += hits[i].normal * (dist + dot);
+                                dir += hits[i].normal * (dot);
                                 //Tell ourself to update the movement information
                                 updateHitInfo = true;
                                 //Store what we collided with
@@ -215,6 +218,8 @@ namespace CustomController
                                 OnCollision.Invoke(this, hits[i]);
 #endif
                             }
+                            else
+                                Debug.Log("Somehow not intersecting for collision");
                         }
                         //This is just to make sure that the last hit check actually gets updated
                         if (updateHitInfo)
@@ -236,6 +241,8 @@ namespace CustomController
 #endif          //MOVE
                 transform.Translate(dir, Space.World);
 #if !COLLISION_CALL_IMMEDIATE
+
+                if (OnCollision != null)
                 //Invoke the event afterwards
                 for (i = 0; i < hits.Length; i++)
                     OnCollision.Invoke(this, hits[i]);
@@ -311,9 +318,10 @@ namespace CustomController
         {
             colInfo.SetTransform(transform);
             Gizmos.color = Color.green;
+
+            colInfo.GizmosDrawCollider();
+
             Gizmos.DrawLine(transform.position, transform.position + moveVec);
-            Gizmos.DrawWireSphere(colInfo.GetUpperPoint() + moveVec, colInfo.Radius);
-            Gizmos.DrawWireSphere(colInfo.GetLowerPoint() + moveVec, colInfo.Radius);
         }
 #endif
         #endregion
