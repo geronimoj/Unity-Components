@@ -18,7 +18,7 @@ namespace StateMachine.States
         /// </summary>
         [SerializeField]
         [Tooltip("The transitions that should be ignored upon entering the state")]
-        private bool[] IgnoreTransitions;
+        private bool[] IgnoreTransitions = new bool[0];
         /// <summary>
         /// Any transitions this state should ignore
         /// </summary>
