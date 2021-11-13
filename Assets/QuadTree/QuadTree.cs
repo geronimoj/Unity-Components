@@ -333,10 +333,7 @@ namespace QuadTree
 
         /*
          
-        Add Range Variant
-
-        Iteration System
-
+        Add Range Variant (Unity only)
         Unity Variants for functions
          
          */
