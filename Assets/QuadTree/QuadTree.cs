@@ -153,7 +153,7 @@ namespace QuadTree
             x = 0;
             y = 0;
             //Loop over all the data
-            foreach(Item i in _allData)
+            foreach (Item i in _allData)
                 if (i.item.Equals(data))
                 {   //If found, return the position of the item
                     x = i.relativePos.x;
@@ -217,8 +217,59 @@ namespace QuadTree
         /// <param name="radius">The radius of the circle</param>
         /// <returns>Returns an array containing all the data that was in the area</returns>
         public T[] GetData(float x, float y, float radius)
-        {
-            throw new System.NotImplementedException();
+        {   //Convert to pos
+            Vec2 pos = new Vec2(x, y);
+            //Call internal function
+            return GetData(ref pos, radius, null);
+        }
+        /// <summary>
+        /// Internal GetData to avoid memory allocation
+        /// </summary>
+        /// <param name="pos">The position</param>
+        /// <param name="radius">The radius</param>
+        /// <param name="returnData">A list to store the return data in instead to avoid memory allocation</param>
+        /// <returns>Returns null if returnData is not null. Otherwise returns an array with the data</returns>
+        internal T[] GetData(ref Vec2 pos, float radius, List<T> returnData)
+        {   //Get the difference in position
+            float xDif = pos.x - _centre.x;
+            float yDif = pos.y - _centre.y;
+            //If we were given a null list, this was the first call. As such, we need to return data
+            //BUT if we were given a list, put the data strait into the list
+            bool returnArray = returnData == null;
+            //If the circle does not clip into the AABB that makes this quad tree, return an empty array
+            if (Math.Abs(yDif) > _halfExtents.y + radius || Math.Abs(xDif) > _halfExtents.x + radius)
+                return returnArray ? new T[0] : null;
+            //Setup storage
+            if (returnData == null)
+                returnData = new List<T>();
+            //Now we calculate which subTrees the circle overlaps
+            //Check if the origin is on the left or the circle overlaps onto the left side
+            //Top left
+            if (_subTrees[0] != null && xDif - radius <= 0 && yDif + radius >= 0)
+                _subTrees[0].GetData(ref pos, radius, returnData);
+            //Top right
+            if (_subTrees[1] != null && xDif + radius > 0 && yDif + radius >= 0)
+                _subTrees[1].GetData(ref pos, radius, returnData);
+            //Bot left
+            if (_subTrees[2] != null && xDif - radius <= 0 && yDif - radius < 0)
+                _subTrees[2].GetData(ref pos, radius, returnData);
+            //Bot right
+            if (_subTrees[3] != null && xDif + radius > 0 && yDif - radius < 0)
+                _subTrees[3].GetData(ref pos, radius, returnData);
+
+            Vec2 dif = new Vec2(0, 0);
+            //Fill the returnData with our stuff
+            foreach(Item i in _data)
+            {   //Get the position difference.
+                //I should really create operators for this
+                dif.x = pos.x - i.relativePos.x;
+                dif.y = pos.y - i.relativePos.y;
+                //If in circle, add to return
+                if (dif.Magnitude < radius)
+                    returnData.Add(i.item);
+            }
+            //Return the array but if we were given a list, return null to avoid excess data creation
+            return returnArray ? returnData.ToArray() : null;
         }
         /// <summary>
         /// Gets all the data in the area of an AABB
@@ -229,20 +280,64 @@ namespace QuadTree
         /// <param name="halfExtentY">The y half extents of the AABB</param>
         /// <returns>Returns an array containing all the data that was in the area</returns>
         public T[] GetData(float x, float y, float halfExtentX, float halfExtentY)
-        {
-            throw new System.NotImplementedException();
+        {   //Convert to internal data types
+            Vec2 pos = new Vec2(x, y);
+            Vec2 extents = new Vec2(halfExtentX, halfExtentY);
+            //Perform the search
+            return GetData(ref pos, ref extents, null);
+        }
+        /// <summary>
+        /// Internal GetData for AABB type get to reduce memory allocation
+        /// </summary>
+        /// <param name="pos">The position of the AABB</param>
+        /// <param name="halfExtents">The halfExtents of the AAbB</param>
+        /// <param name="returnData">List containing the return data</param>
+        /// <returns></returns>
+        internal T[] GetData(ref Vec2 pos, ref Vec2 halfExtents, List<T> returnData)
+        {   //Get positional difference between origin
+            float xDif = pos.x - _centre.x;
+            float yDif = pos.y - _centre.y;
+            //To return or not to return data, that is the question
+            bool returnArray = returnData == null;
+            //Make sure the colliders overlap
+            if (Math.Abs(xDif) > _halfExtents.x + halfExtents.x || Math.Abs(yDif) > _halfExtents.y + halfExtents.y)
+                return returnArray ? new T[0] : null;
+            //Make sure list exists
+            if (returnData == null)
+                returnData = new List<T>();
+            //Top Left
+            if (_subTrees[0] != null && xDif - halfExtents.x <= 0 && yDif + halfExtents.y >= 0)
+                _subTrees[0].GetData(ref pos, ref halfExtents, returnData);
+            //Top Right
+            if (_subTrees[1] != null && xDif + halfExtents.x > 0 && yDif + halfExtents.y >= 0)
+                _subTrees[1].GetData(ref pos, ref halfExtents, returnData);
+            //Bot Left
+            if (_subTrees[2] != null && xDif - halfExtents.x <= 0 && yDif - halfExtents.y < 0)
+                _subTrees[2].GetData(ref pos, ref halfExtents, returnData);
+            //Bot Right
+            if (_subTrees[3] != null && xDif + halfExtents.x > 0 && yDif - halfExtents.y < 0)
+                _subTrees[3].GetData(ref pos, ref halfExtents, returnData);
+
+            //Fill the returnData
+            foreach(Item i in _data)
+            {   //Get the difference in position to the AABB and items position
+                xDif = pos.x - i.relativePos.x;
+                yDif = pos.y - i.relativePos.y;
+                //Check if the x difference is within the extents of the box
+                if (Math.Abs(xDif) < halfExtents.x && Math.Abs(yDif) < halfExtents.y)
+                    returnData.Add(i.item);
+            }
+            //Return the array if we didn't start with a list
+            return returnArray ? returnData.ToArray() : null;
         }
 
         /*
          
-        To Do: Get in radius, Get in AABB
         Add Range Variant
 
         Iteration System
 
         Unity Variants for functions
-
-        Comments...
          
          */
         /// <summary>
@@ -332,7 +427,7 @@ namespace QuadTree
                 this.y = y;
             }
 
-            public static bool operator==(Vec2 a, Vec2 b)
+            public static bool operator ==(Vec2 a, Vec2 b)
             {
                 return a.x == b.x && a.y == b.y;
             }
