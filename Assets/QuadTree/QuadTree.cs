@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+//Have to define both because UNITY may not be defined.
+//If its not, a build will add it to the defines.
 #if UNITY_EDITOR || UNITY
-    using Vec2 = UnityEngine.Vector2;
+//If in unity, replace my Vec2 struct with Unity's Vector2 struct
+using Vec2 = UnityEngine.Vector2;
+    //If its in editor, also get build stuff.
     #if UNITY_EDITOR
         using UnityEditor.Build;
         using UnityEditor.Build.Reporting;
@@ -415,7 +419,7 @@ namespace QuadTree
             return targetTree;
         }
 
-#if !UNITY
+#if !UNITY && !UNITY_EDITOR
         /// <summary>
         /// Internal vector 2 data type so that this can work outside of unity
         /// </summary>
@@ -483,13 +487,18 @@ namespace QuadTree
         public int callbackOrder => int.MinValue;
 
         public void OnPreprocessBuild(BuildReport report)
-        {   //Get current defines to avoid deleting them
-            string defines = UnityEditor.PlayerSettings.GetScriptingDefineSymbolsForGroup(UnityEditor.BuildTargetGroup.Standalone);
+        {   //Get the build target
+            var target = UnityEditor.EditorUserBuildSettings.selectedBuildTargetGroup;
+            //Get current defines to avoid deleting them
+            string defines = UnityEditor.PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
             //If it does not contain the define, add it
             if (!defines.Contains(";UNITY"))
+            {
                 defines += ";" + customDefines;
+                UnityEngine.Debug.Log("Added UNITY define to Custom Defines for Standalone build. Other build types may require edits.");
+            }
             //Re-assign defines
-            UnityEditor.PlayerSettings.SetScriptingDefineSymbolsForGroup(UnityEditor.BuildTargetGroup.Standalone, defines);
+            UnityEditor.PlayerSettings.SetScriptingDefineSymbolsForGroup(target, defines);
         }
     }
 #endif
