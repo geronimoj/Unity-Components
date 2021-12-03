@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 #if UNITY_EDITOR || UNITY
-using UnityEngine;
-using Vec2 = UnityEngine.Vector2;
-#if UNITY_EDITOR
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
-#endif
+    using Vec2 = UnityEngine.Vector2;
+    #if UNITY_EDITOR
+        using UnityEditor.Build;
+        using UnityEditor.Build.Reporting;
+    #endif
 #endif
 
 namespace QuadTree
