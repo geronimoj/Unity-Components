@@ -252,6 +252,11 @@ namespace QuadTree
             //Setup storage
             if (returnData == null)
                 returnData = new List<T>();
+
+            Vec2 dif = new Vec2(xDif, yDif);
+            //Get x & y
+            float x = Vec2.Dot(dif, new Vec2(1, 0)) * _halfExtents.x;
+            float y = Vec2.Dot(dif, new Vec2(0, 1)) * _halfExtents.y;
             //Now we calculate which subTrees the circle overlaps
             //Check if the origin is on the left or the circle overlaps onto the left side
             //Top left
@@ -266,8 +271,9 @@ namespace QuadTree
             //Bot right
             if (_subTrees[3] != null && xDif + radius > 0 && yDif - radius < 0)
                 _subTrees[3].GetData(ref pos, radius, returnData);
-
-            Vec2 dif = new Vec2(0, 0);
+            //Reset dif to avoid memory allocation
+            dif.x = 0;
+            dif.y = 0;
             //Fill the returnData with our stuff
             foreach (Item i in _data)
             {   //Get the position difference.
@@ -434,6 +440,11 @@ namespace QuadTree
                 this.x = x;
                 this.y = y;
             }
+
+        public static float Dot(Vec2 a, Vec2 b)
+        {
+            return a.x * b.x + a.y * b.y;
+        }
 
             public static bool operator ==(Vec2 a, Vec2 b)
             {
