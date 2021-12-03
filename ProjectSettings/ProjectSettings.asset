@@ -127,8 +127,7 @@ PlayerSettings:
     16:9: 1
     Others: 1
   bundleVersion: 0.1
-  preloadedAssets:
-  - {fileID: 0}
+  preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
   m_HolographicPauseOnTrackingLoss: 1
@@ -584,7 +583,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    1: AUTO_STATE_MACHINE;UNITY;UNITY
+    1: AUTO_STATE_MACHINE;UNITY
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}
