@@ -1,6 +1,15 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+#if UNITY_EDITOR || UNITY
+using UnityEngine;
+using Vec2 = UnityEngine.Vector2;
+#if UNITY_EDITOR
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+#endif
+#endif
 
 namespace QuadTree
 {
@@ -259,13 +268,13 @@ namespace QuadTree
 
             Vec2 dif = new Vec2(0, 0);
             //Fill the returnData with our stuff
-            foreach(Item i in _data)
+            foreach (Item i in _data)
             {   //Get the position difference.
                 //I should really create operators for this
                 dif.x = pos.x - i.relativePos.x;
                 dif.y = pos.y - i.relativePos.y;
                 //If in circle, add to return
-                if (dif.Magnitude < radius)
+                if (dif.magnitude < radius)
                     returnData.Add(i.item);
             }
             //Return the array but if we were given a list, return null to avoid excess data creation
@@ -319,7 +328,7 @@ namespace QuadTree
                 _subTrees[3].GetData(ref pos, ref halfExtents, returnData);
 
             //Fill the returnData
-            foreach(Item i in _data)
+            foreach (Item i in _data)
             {   //Get the difference in position to the AABB and items position
                 xDif = pos.x - i.relativePos.x;
                 yDif = pos.y - i.relativePos.y;
@@ -409,6 +418,7 @@ namespace QuadTree
             return targetTree;
         }
 
+#if !UNITY
         /// <summary>
         /// Internal vector 2 data type so that this can work outside of unity
         /// </summary>
@@ -416,7 +426,7 @@ namespace QuadTree
         {
             public float x, y;
 
-            public double Magnitude => Math.Sqrt((x * x) + (y * y));
+            public double magnitude => Math.Sqrt((x * x) + (y * y));
 
             public Vec2(float x, float y)
             {
@@ -442,6 +452,7 @@ namespace QuadTree
                 return base.GetHashCode();
             }
         }
+#endif
         /// <summary>
         /// Storage type for data
         /// </summary>
@@ -458,4 +469,31 @@ namespace QuadTree
             }
         }
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Before the build begins, make sure to add UNITY define if it does not already exist
+    /// </summary>
+    public class PreBuild : IPreprocessBuildWithReport
+    {
+        /// <summary>
+        /// The define to add
+        /// </summary>
+        public const string customDefines = "UNITY";
+        /// <summary>
+        /// Make this run first
+        /// </summary>
+        public int callbackOrder => int.MinValue;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {   //Get current defines to avoid deleting them
+            string defines = UnityEditor.PlayerSettings.GetScriptingDefineSymbolsForGroup(UnityEditor.BuildTargetGroup.Standalone);
+            //If it does not contain the define, add it
+            if (!defines.Contains(";UNITY"))
+                defines += ";" + customDefines;
+            //Re-assign defines
+            UnityEditor.PlayerSettings.SetScriptingDefineSymbolsForGroup(UnityEditor.BuildTargetGroup.Standalone, defines);
+        }
+    }
+#endif
 }
