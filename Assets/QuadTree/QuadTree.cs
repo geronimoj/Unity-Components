@@ -5,11 +5,11 @@ using System.Collections.Generic;
 #if UNITY_EDITOR || UNITY
 //If in unity, replace my Vec2 struct with Unity's Vector2 struct
 using Vec2 = UnityEngine.Vector2;
-    //If its in editor, also get build stuff.
-    #if UNITY_EDITOR
-        using UnityEditor.Build;
-        using UnityEditor.Build.Reporting;
-    #endif
+//If its in editor, also get build stuff.
+#if UNITY_EDITOR
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
+#endif
 #endif
 
 namespace QuadTree
@@ -249,16 +249,35 @@ namespace QuadTree
             //If the circle does not clip into the AABB that makes this quad tree, return an empty array
             if (Math.Abs(yDif) > _halfExtents.y + radius || Math.Abs(xDif) > _halfExtents.x + radius)
                 return returnArray ? new T[0] : null;
+            //Get the closest point on the quad tree using local cords
+            Vec2 dif = new Vec2(xDif, yDif);
+            //Encapsuale in its own block so that toClosest is cleaned up as soon as possible
+            {
+                Vec2 toClosest = dif;
+                //Get closest X
+                if (xDif > _halfExtents.x)
+                    toClosest.x = _halfExtents.x;
+                else if (xDif < -_halfExtents.x)
+                    toClosest.x = -_halfExtents.x;
+                //Get closest Y
+                if (yDif > _halfExtents.y)
+                    toClosest.y = _halfExtents.y;
+                else if (yDif < -_halfExtents.y)
+                    toClosest.y = -_halfExtents.y;
+                //Convert dif to be the distance between the closest point and the circle
+                //If the point is inside the cube, this will be 0,0
+                dif.x -= toClosest.x;
+                dif.y -= toClosest.y;
+            }
+            //If the distance from the closest point on the box to the circle is greater than the radius its not in range
+            if (dif.magnitude > radius)
+                return returnArray ? new T[0] : null;
             //Setup storage
             if (returnData == null)
                 returnData = new List<T>();
-
-            Vec2 dif = new Vec2(xDif, yDif);
-            //Get x & y
-            float x = Vec2.Dot(dif, new Vec2(1, 0)) * _halfExtents.x;
-            float y = Vec2.Dot(dif, new Vec2(0, 1)) * _halfExtents.y;
             //Now we calculate which subTrees the circle overlaps
-            //Check if the origin is on the left or the circle overlaps onto the left side
+            //Check if any point of the circle exists in each of the 4 quadrants.
+            //We do this by checking if the most extreme position, eg most left & most top, of the circle is in a given quadrant
             //Top left
             if (_subTrees[0] != null && xDif - radius <= 0 && yDif + radius >= 0)
                 _subTrees[0].GetData(ref pos, radius, returnData);
@@ -271,12 +290,10 @@ namespace QuadTree
             //Bot right
             if (_subTrees[3] != null && xDif + radius > 0 && yDif - radius < 0)
                 _subTrees[3].GetData(ref pos, radius, returnData);
-            //Reset dif to avoid memory allocation
-            dif.x = 0;
-            dif.y = 0;
             //Fill the returnData with our stuff
             foreach (Item i in _data)
             {   //Get the position difference.
+                //We re-use dif to avoid allocating more memory
                 //I should really create operators for this
                 dif.x = pos.x - i.relativePos.x;
                 dif.y = pos.y - i.relativePos.y;
@@ -285,6 +302,7 @@ namespace QuadTree
                     returnData.Add(i.item);
             }
             //Return the array but if we were given a list, return null to avoid excess data creation
+            //The original called of the function will return the array
             return returnArray ? returnData.ToArray() : null;
         }
         /// <summary>
@@ -441,10 +459,10 @@ namespace QuadTree
                 this.y = y;
             }
 
-        public static float Dot(Vec2 a, Vec2 b)
-        {
-            return a.x * b.x + a.y * b.y;
-        }
+            public static float Dot(Vec2 a, Vec2 b)
+            {
+                return a.x * b.x + a.y * b.y;
+            }
 
             public static bool operator ==(Vec2 a, Vec2 b)
             {
