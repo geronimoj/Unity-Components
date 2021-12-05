@@ -18,9 +18,9 @@ namespace QuadTree
     public class QuadTree<T>
     {
         /// <summary>
-        /// How deep the quad tree can go
+        /// How many subTrees the quad tree can go
         /// </summary>
-        private readonly uint _depth = 0;
+        public readonly uint _depth = 0;
         /// <summary>
         /// The relative centre of the quad tree
         /// </summary>
@@ -29,6 +29,16 @@ namespace QuadTree
         /// The relative scale of the QuadTree
         /// </summary>
         private Vec2 _halfExtents = new Vec2(0, 0);
+#if UNITY_EDITOR || UNITY
+        /// <summary>
+        /// The centre of the quadTree
+        /// </summary>
+        public Vec2 Center => _centre;
+        /// <summary>
+        /// The half extents of the QuadTree
+        /// </summary>
+        public Vec2 HalfExtents => _halfExtents;
+#endif
         /// <summary>
         /// The sub trees going from left to right, top to bottom.
         /// </summary>
