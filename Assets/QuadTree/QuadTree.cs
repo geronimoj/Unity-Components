@@ -14,7 +14,7 @@ using UnityEditor.Build.Reporting;
 
 namespace QuadTree
 {
-
+    [Serializable]
     public class QuadTree<T>
     {
         /// <summary>
@@ -70,8 +70,7 @@ namespace QuadTree
         /// <returns>Returns true if an item was removed</returns>
         public bool Remove(T data)
         {
-            int i;
-            for (i = 0; i < _allData.Count; i++)
+            for (int i = 0; i < _allData.Count; i++)
                 //Check for the same item
                 if (_allData[i].item.Equals(data))
                 {   //Remove it from all data
@@ -132,9 +131,8 @@ namespace QuadTree
         /// <param name="data">The data to move</param>
         public void MoveItem(float newX, float newY, T data)
         {   //Search for it in allData
-            int i;
             Item reference = null;
-            for (i = 0; i < _allData.Count; i++)
+            for (int i = 0; i < _allData.Count; i++)
                 //Check for the same item
                 if (_allData[i].item.Equals(data))
                 {   //If we find it, store a reference to it
