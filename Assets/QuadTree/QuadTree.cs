@@ -60,6 +60,58 @@ namespace QuadTree
             _halfExtents = new Vec2(halfExtentsX, halfExtentsY);
         }
         /// <summary>
+        /// Moves the centre of the quadTree to a new position
+        /// </summary>
+        /// <param name="newX">new X position</param>
+        /// <param name="newY">new Y position</param>
+        public void SetCenter(float newX, float newY)
+        {   //Move the centre
+            _centre.x = newX;
+            _centre.y = newY;
+            //Storage for indexer to avoid creating more garbage
+            int i;
+            //Clear all data from the quadTree. we have to re-calculate everything now.
+            for (i = 0; i < _subTrees.Length; i++)
+            {   //Null catch
+                if (_subTrees[i] == null)
+                    continue;
+                _subTrees[i].Clear();
+                _subTrees[i] = null;
+            }
+            _data.Clear();
+            //Sort the items back into the tree
+            for (i = 0; i < _allData.Count; i++)
+                //Sort the items back into the quadTree
+                StoreItem(_allData[i]);
+        }
+        /// <summary>
+        /// Sets the half extents for the quadTree
+        /// </summary>
+        /// <param name="newX">The new x half extent</param>
+        /// <param name="newY">The new y half extent</param>
+        public void SetHalfExtents(float newX, float newY)
+        {   //Update the extents
+            _halfExtents.x = newX;
+            _halfExtents.y = newY;
+            //The top most tree only shrinks in size, no items move subTrees
+            //But the subTrees now have new positions which we now need to update the position of
+            //So we just reset the everything//Storage for indexer to avoid creating more garbage
+            int i;
+            //Clear all data from the quadTree. we have to re-calculate everything now.
+            for (i = 0; i < _subTrees.Length; i++)
+            {   //Null catch
+                if (_subTrees[i] == null)
+                    continue;
+                _subTrees[i].Clear();
+                _subTrees[i] = null;
+            }
+            _data.Clear();
+            //Sort the items back into the tree
+            for (i = 0; i < _allData.Count; i++)
+                //Sort the items back into the quadTree
+                StoreItem(_allData[i]);
+        }
+        /// <summary>
         /// Adds a piece of data to the tree
         /// </summary>
         /// <param name="x">The x position of the data</param>
