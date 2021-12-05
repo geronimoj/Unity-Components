@@ -64,96 +64,6 @@ namespace QuadTree
             _halfExtents = new Vec2(halfExtentsX, halfExtentsY);
         }
         /// <summary>
-        /// Moves the centre of the quadTree to a new position. This is an expensive operation.
-        /// </summary>
-        /// <param name="newX">new X position</param>
-        /// <param name="newY">new Y position</param>
-        public void SetCenter(float newX, float newY)
-        {   //If no change, do nothing
-            if (_centre.x == newX && _centre.y == newY)
-                return;
-            //Move the centre
-            _centre.x = newX;
-            _centre.y = newY;
-            //Storage for indexer to avoid creating more garbage
-            int i;
-            //Clear all data from the quadTree. we have to re-calculate everything now.
-            for (i = 0; i < _subTrees.Length; i++)
-            {   //Null catch
-                if (_subTrees[i] == null)
-                    continue;
-                _subTrees[i].Clear();
-                _subTrees[i] = null;
-            }
-            _data.Clear();
-            //Sort the items back into the tree
-            for (i = 0; i < _allData.Count; i++)
-                //Sort the items back into the quadTree
-                StoreItem(_allData[i]);
-        }
-        /// <summary>
-        /// Sets the half extents for the quadTree. This is an expensive operation.
-        /// </summary>
-        /// <param name="newX">The new x half extent</param>
-        /// <param name="newY">The new y half extent</param>
-        public void SetHalfExtents(float newX, float newY)
-        {   //If no change, do nothing
-            if (_halfExtents.x == newX && _halfExtents.y == newY) 
-                return;
-            //Update the extents
-            _halfExtents.x = newX;
-            _halfExtents.y = newY;
-            //The top most tree only shrinks in size, no items move subTrees
-            //But the subTrees now have new positions which we now need to update the position of
-            //So we just reset the everything//Storage for indexer to avoid creating more garbage
-            int i;
-            //Clear all data from the quadTree. we have to re-calculate everything now.
-            for (i = 0; i < _subTrees.Length; i++)
-            {   //Null catch
-                if (_subTrees[i] == null)
-                    continue;
-                _subTrees[i].Clear();
-                _subTrees[i] = null;
-            }
-            _data.Clear();
-            //Sort the items back into the tree
-            for (i = 0; i < _allData.Count; i++)
-                //Sort the items back into the quadTree
-                StoreItem(_allData[i]);
-        }
-        /// <summary>
-        /// Sets the depth of the QuadTree. This can be an expensive operation
-        /// </summary>
-        /// <param name="depth">The new max depth</param>
-        public void SetDepth(uint maxDepth)
-        {   //If there has been no change, do nothing
-            if (_depth == maxDepth)
-                return;
-            //Set the new maxDepth
-            _depth = maxDepth;
-            //Check our own depth
-            CheckDepth();
-        }
-
-        internal void CheckDepth()
-        {   //If our depth is 0, remove all subTrees
-            if (_depth == 0)
-                //Delete any subTrees we may have
-                for (byte i = 0; i < _subTrees.Length; i++)
-                    //Clear the subTree
-                    if (_subTrees[i] != null)
-                    {   //Tell the tree its new depth
-                        _subTrees[i].SetDepth(0);
-                        //Take all its data
-                        foreach (Item item in _subTrees[i]._data)
-                            StoreItem(item);
-                        //Set it to be null
-                        _subTrees[i] = null;
-                    }
-            //If our depth increased, this will sort items into subTrees if necessary
-            CalculateTree();
-        }
-        /// <summary>
         /// Adds a piece of data to the tree
         /// </summary>
         /// <param name="x">The x position of the data</param>
@@ -466,6 +376,93 @@ namespace QuadTree
             return returnArray ? returnData.ToArray() : null;
         }
         /// <summary>
+        /// Moves the centre of the quadTree to a new position. This is an expensive operation.
+        /// </summary>
+        /// <param name="newX">new X position</param>
+        /// <param name="newY">new Y position</param>
+        public void SetCenter(float newX, float newY)
+        {   //If no change, do nothing
+            if (_centre.x == newX && _centre.y == newY)
+                return;
+            //Move the centre
+            _centre.x = newX;
+            _centre.y = newY;
+            //Re-calculate tree
+            RefreshQuadTree();
+        }
+        /// <summary>
+        /// Sets the half extents for the quadTree. This is an expensive operation.
+        /// </summary>
+        /// <param name="newX">The new x half extent</param>
+        /// <param name="newY">The new y half extent</param>
+        public void SetHalfExtents(float newX, float newY)
+        {   //If no change, do nothing
+            if (_halfExtents.x == newX && _halfExtents.y == newY)
+                return;
+            //Update the extents
+            _halfExtents.x = newX;
+            _halfExtents.y = newY;
+            //The top most tree only shrinks in size, no items move subTrees
+            //But the subTrees now have new positions which we now need to update the position of
+            //So we just reset the everything
+            RefreshQuadTree();
+        }
+        /// <summary>
+        /// Sets the depth of the QuadTree. This can be an expensive operation
+        /// </summary>
+        /// <param name="depth">The new max depth</param>
+        public void SetDepth(uint maxDepth)
+        {   //If there has been no change, do nothing
+            if (_depth == maxDepth)
+                return;
+            //Set the new maxDepth
+            _depth = maxDepth;
+            //Check our own depth
+            CheckDepth();
+        }
+        /// <summary>
+        /// Checks the current depth & calculates if items should be put in subTrees.
+        /// If the depth is 0, removes subTrees.
+        /// </summary>
+        internal void CheckDepth()
+        {   //If our depth is 0, remove all subTrees
+            if (_depth == 0)
+                //Delete any subTrees we may have
+                for (byte i = 0; i < _subTrees.Length; i++)
+                    //Clear the subTree
+                    if (_subTrees[i] != null)
+                    {   //Tell the tree its new depth, this will cause them to recursively collect the data from their children.
+                        _subTrees[i].SetDepth(0);
+                        //Take all its data
+                        foreach (Item item in _subTrees[i]._data)
+                            StoreItem(item);
+                        //Set it to be null
+                        _subTrees[i] = null;
+                    }
+            //If our depth increased, this will sort items into subTrees if necessary
+            CalculateTree();
+        }
+        /// <summary>
+        /// Forces the QuadTree to recalculate all item locations
+        /// </summary>
+        internal void RefreshQuadTree()
+        {   //Storage for indexer to avoid creating more garbage
+            int i;
+            //Clear all data from the quadTree. we have to re-calculate everything now.
+            for (i = 0; i < _subTrees.Length; i++)
+            {   //Null catch
+                if (_subTrees[i] == null)
+                    continue;
+                _subTrees[i].Clear();
+                _subTrees[i] = null;
+            }
+            _data.Clear();
+            //Sort the items back into the tree
+            for (i = 0; i < _allData.Count; i++)
+                //Sort the items back into the quadTree
+                StoreItem(_allData[i]);
+        }
+        /// <summary>
         /// For storing an item internally with reduced memory allocation
         /// </summary>
         /// <param name="data">The data to store already packaged as an item</param>
@@ -544,6 +541,32 @@ namespace QuadTree
             _depth = maxDepth;
             _centre = centre;
             _halfExtents = halfExtents;
+        }
+        /// <summary>
+        /// Sets the position of the quadTree. This is an expensive operation
+        /// </summary>
+        /// <param name="newPos">The new position of the quadTree</param>
+        public void SetCenter(Vec2 newPos)
+        {   //Identical value checl
+            if (_centre == newPos)
+                return;
+            //Assign new value
+            _centre = newPos;
+            //Recalculate
+            RefreshQuadTree();
+        }
+        /// <summary>
+        /// Changes the halfExtents of the quadTree. This is an expensive operation.
+        /// </summary>
+        /// <param name="newHalfExtents">The new half extents</param>
+        public void SetHalfExtents(Vec2 newHalfExtents)
+        {   //Identical value catch
+            if (_halfExtents == newHalfExtents)
+                return;
+            //Assign new value
+            _halfExtents = newHalfExtents;
+            //Recalculate the tree
+            RefreshQuadTree();
         }
         /// <summary>
         /// Adds a piece of data to the tree
