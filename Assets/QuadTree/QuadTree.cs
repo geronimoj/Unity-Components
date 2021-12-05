@@ -160,8 +160,7 @@ namespace QuadTree
         /// <returns>Returns true if the data was found</returns>
         public bool GetPosition(T data, out float x, out float y)
         {   //Default to 0
-            x = 0;
-            y = 0;
+            x = y = 0;
             //Loop over all the data
             foreach (Item i in _allData)
                 if (i.item.Equals(data))
