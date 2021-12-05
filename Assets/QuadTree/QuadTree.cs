@@ -509,7 +509,7 @@ namespace QuadTree
         /// <summary>
         /// The define to add
         /// </summary>
-        public const string customDefines = "UNITY";
+        private const string customDefines = "UNITY";
         /// <summary>
         /// Make this run first
         /// </summary>
