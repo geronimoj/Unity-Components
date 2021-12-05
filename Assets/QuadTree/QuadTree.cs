@@ -20,7 +20,11 @@ namespace QuadTree
         /// <summary>
         /// How many subTrees the quad tree can go
         /// </summary>
-        public readonly uint _depth = 0;
+        private uint _depth = 0;
+        /// <summary>
+        /// The max depth the quadtree can go
+        /// </summary>
+        public uint Depth => _depth;
         /// <summary>
         /// The relative centre of the quad tree
         /// </summary>
@@ -47,7 +51,7 @@ namespace QuadTree
         /// <summary>
         /// Storage location for the data
         /// </summary>
-        private readonly List<Item> _data = new List<Item>();
+        internal readonly List<Item> _data = new List<Item>();
         /// <summary>
         /// All the data on this quad tree for easy getting
         /// </summary>
@@ -60,12 +64,15 @@ namespace QuadTree
             _halfExtents = new Vec2(halfExtentsX, halfExtentsY);
         }
         /// <summary>
-        /// Moves the centre of the quadTree to a new position
+        /// Moves the centre of the quadTree to a new position. This is an expensive operation.
         /// </summary>
         /// <param name="newX">new X position</param>
         /// <param name="newY">new Y position</param>
         public void SetCenter(float newX, float newY)
-        {   //Move the centre
+        {   //If no change, do nothing
+            if (_centre.x == newX && _centre.y == newY)
+                return;
+            //Move the centre
             _centre.x = newX;
             _centre.y = newY;
             //Storage for indexer to avoid creating more garbage
@@ -85,12 +92,15 @@ namespace QuadTree
                 StoreItem(_allData[i]);
         }
         /// <summary>
-        /// Sets the half extents for the quadTree
+        /// Sets the half extents for the quadTree. This is an expensive operation.
         /// </summary>
         /// <param name="newX">The new x half extent</param>
         /// <param name="newY">The new y half extent</param>
         public void SetHalfExtents(float newX, float newY)
-        {   //Update the extents
+        {   //If no change, do nothing
+            if (_halfExtents.x == newX && _halfExtents.y == newY) 
+                return;
+            //Update the extents
             _halfExtents.x = newX;
             _halfExtents.y = newY;
             //The top most tree only shrinks in size, no items move subTrees
@@ -110,6 +120,38 @@ namespace QuadTree
             for (i = 0; i < _allData.Count; i++)
                 //Sort the items back into the quadTree
                 StoreItem(_allData[i]);
+        }
+        /// <summary>
+        /// Sets the depth of the QuadTree. This can be an expensive operation
+        /// </summary>
+        /// <param name="depth">The new max depth</param>
+        public void SetDepth(uint maxDepth)
+        {   //If there has been no change, do nothing
+            if (_depth == maxDepth)
+                return;
+            //Set the new maxDepth
+            _depth = maxDepth;
+            //Check our own depth
+            CheckDepth();
+        }
+
+        internal void CheckDepth()
+        {   //If our depth is 0, remove all subTrees
+            if (_depth == 0)
+                //Delete any subTrees we may have
+                for (byte i = 0; i < _subTrees.Length; i++)
+                    //Clear the subTree
+                    if (_subTrees[i] != null)
+                    {   //Tell the tree its new depth
+                        _subTrees[i].SetDepth(0);
+                        //Take all its data
+                        foreach (Item item in _subTrees[i]._data)
+                            StoreItem(item);
+                        //Set it to be null
+                        _subTrees[i] = null;
+                    }
+            //If our depth increased, this will sort items into subTrees if necessary
+            CalculateTree();
         }
         /// <summary>
         /// Adds a piece of data to the tree
