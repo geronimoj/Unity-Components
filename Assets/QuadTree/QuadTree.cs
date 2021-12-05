@@ -361,13 +361,6 @@ namespace QuadTree
             //Return the array if we didn't start with a list
             return returnArray ? returnData.ToArray() : null;
         }
-
-        /*
-         
-        Add Range Variant (Unity only)
-        Unity Variants for functions
-         
-         */
         /// <summary>
         /// For storing an item internally with reduced memory allocation
         /// </summary>
@@ -440,6 +433,130 @@ namespace QuadTree
             return targetTree;
         }
 
+        #region UnityFunctionVariants
+#if UNITY_EDITOR || UNITY
+        public QuadTree(uint maxDepth, Vec2 centre, Vec2 halfExtents)
+        {
+            _depth = maxDepth;
+            _centre = centre;
+            _halfExtents = halfExtents;
+        }
+        /// <summary>
+        /// Adds a piece of data to the tree
+        /// </summary>
+        /// <param name="pos">The position of the data</param>
+        /// <param name="data">The data</param>
+        public void Add(Vec2 pos, T data)
+        {   //Put the data in a storage type
+            Item newData = new Item(pos, data);
+            //Store the data globally
+            _allData.Add(newData);
+            //Do the math to see where to store it
+            StoreItem(newData);
+        }
+        /// <summary>
+        /// Adds all data at the given positions.
+        /// positions & data must have equal length
+        /// </summary>
+        /// <param name="positions">The positions to place the data at</param>
+        /// <param name="data">The data to add</param>
+        public void Add(Vec2[] positions, T[] data)
+        {   //Length catch
+            if (positions.Length != data.Length)
+                throw new Exception("QuadTree: Array lengths are not equal for AddRange.");
+            //Add the items
+            for (int i = 0; i < positions.Length; i++)
+                //Add using the Unity variant function
+                Add(positions[i], data[i]);
+        }
+        /// <summary>
+        /// Moves the position of a piece of data
+        /// </summary>
+        /// <param name="newPos">The new position</param>
+        /// <param name="data">The data to move</param>
+        public void MoveItem(Vec2 newPos, T data)
+        {   //Search for it in allData
+            Item reference = null;
+            for (int i = 0; i < _allData.Count; i++)
+                //Check for the same item
+                if (_allData[i].item.Equals(data))
+                {   //If we find it, store a reference to it
+                    reference = _allData[i];
+                    //Remove it
+                    RemoveInternal(_allData[i].item);
+                }
+            //If reference has not been assigned to, it failed
+            if (reference == null)
+                return;
+            //Set the new position
+            reference.relativePos = newPos;
+            //Sort it back into the tree
+            StoreItem(reference);
+        }
+        /// <summary>
+        /// Gets the position of a piece of data
+        /// </summary>
+        /// <param name="data">The data to get the position of</param>
+        /// <param name="pos">Out position</param>
+        /// <returns>Returns true if the data was found</returns>
+        public bool GetPosition(T data, out Vec2 pos)
+        {   //Default to 0
+            pos = new Vec2(0, 0);
+            //Loop over all the data
+            foreach (Item i in _allData)
+                if (i.item.Equals(data))
+                {   //If found, return the position of the item
+                    pos = i.relativePos;
+                    return true;
+                }
+            //Fail
+            return false;
+        }
+        /// <summary>
+        /// Internal GetData to avoid extra memory allocation
+        /// </summary>
+        /// <param name="pos">A reference to the position to avoid additional memory allocation</param>
+        /// <returns>Returns the Data at that position</returns>
+        public T GetData(Vec2 pos)
+        {   //Search items for identical item
+            foreach (Item item in _data)
+                if (item.relativePos == pos)
+                    //Return it if it has the same position
+                    return item.item;
+            //Search through the subtree
+            byte tree = GetSubTree(pos);
+            //Null catch
+            if (_subTrees[tree] == null)
+                return default;
+            //Search through subTree
+            T data = _subTrees[tree].GetData(ref pos);
+            //Otherwise return teh default value
+            return data;
+        }
+        /// <summary>
+        /// Gets all data in a radius from a point
+        /// </summary>
+        /// <param name="pos">The position of the circle</param>
+        /// <param name="radius">The radius of the circle</param>
+        /// <returns>Returns an array containing all the data that was in the area</returns>
+        public T[] GetData(Vec2 pos, float radius)
+        {   //Call internal function
+            return GetData(ref pos, radius, null);
+        }
+        /// <summary>
+        /// Gets all the data in the area of an AABB
+        /// </summary>
+        /// <param name="pos">The centre position of the box</param>
+        /// <param name="halfExtents">The half extents of the AABB</param>
+        /// <returns>Returns an array containing all the data that was in the area</returns>
+        public T[] GetData(Vec2 pos, Vec2 halfExtents)
+        {   //Perform the search
+            return GetData(ref pos, ref halfExtents, null);
+        }
+#endif
+        #endregion
+
+        #region Interal
 #if !UNITY && !UNITY_EDITOR
         /// <summary>
         /// Internal vector 2 data type so that this can work outside of unity
@@ -495,6 +612,7 @@ namespace QuadTree
                 this.item = item;
             }
         }
+        #endregion
     }
 
 #if UNITY_EDITOR
