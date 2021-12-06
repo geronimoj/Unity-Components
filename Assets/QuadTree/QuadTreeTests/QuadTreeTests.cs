@@ -1,9 +1,7 @@
 ﻿#if UNITY_EDITOR
 using System.Collections.Generic;
 using NUnit.Framework;
-using QuadTree;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace QuadTree.Tests
 {
