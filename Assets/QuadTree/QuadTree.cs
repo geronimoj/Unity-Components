@@ -131,7 +131,7 @@ namespace QuadTree
             for (i = 0; i < _subTrees.Length; i++)
                 //If a subTree finds the item, return true
                 //This should stop all searching for the item
-                if (_subTrees[i].RemoveInternal(data))
+                if (_subTrees[i] != null && _subTrees[i].RemoveInternal(data))
                     return true;
 
             //Otherwise it could not be found
