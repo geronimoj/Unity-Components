@@ -484,7 +484,7 @@ namespace QuadTree
         /// </summary>
         private void CalculateTree()
         {   //Make sure there is data to build the tree for
-            if (_depth == 0 && _data.Count < 2)
+            if (_depth == 0 || _data.Count < 2)
                 return;
             byte targetTree;
             //Loop over the data and put them in sub trees
