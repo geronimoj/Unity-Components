@@ -501,7 +501,8 @@ namespace QuadTree
                     //If targetTree is 2 - 3, bottom otherwise top
                     offset.y *= targetTree > 1 ? -1 : 1;
                     //Put it in the centre instead of the corner
-                    offset *= 0.5f;
+                    offset.x *= 0.5f;
+                    offset.y *= 0.5f;
                     //Create a new tree
                     _subTrees[targetTree] = new QuadTree<T>(_depth - 1, _centre.x + offset.x, _centre.y + offset.y, _halfExtents.x / 2, _halfExtents.y / 2);
                 }
