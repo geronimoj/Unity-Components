@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 public static class Extensions
 {
@@ -103,4 +104,18 @@ public static class Extensions
         return i % 2 == 1;
     }
     #endregion
+
+    public static bool Equals(this float f, float target, float tolerance)
+    {
+        target -= f;
+        target = Math.Abs(target);
+        return target < tolerance;
+    }
+
+    public static bool Equals(this double d, double target, double tolerance)
+    {
+        target -= d;
+        target = Math.Abs(target);
+        return target < tolerance;
+    }
 }
