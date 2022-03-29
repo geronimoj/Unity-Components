@@ -78,6 +78,58 @@ public static class Extensions
         return ret;
     }
 
+    #region Arrays
+    /// <summary>
+    /// Extends the array by extendAmount
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="a"></param>
+    /// <param name="extendAmount">The amount to extend by. Must be greater than 0</param>
+    /// <returns>Returns a new array with the new length & indentical contents</returns>
+    public static T[] Extend<T>(this T[] a, int extendAmount)
+    {   //Must be extending by valid number
+        if (extendAmount <= 0)
+            throw new ArgumentException("extendAmount must be greater than 0");
+        //If null or empty, return new array
+        if (a.IsNullOrEmpty())
+            return new T[extendAmount];
+
+        extendAmount += a.Length;
+        //The @ just lets me use new as a variable instead of a keyword
+        T[] @new = new T[extendAmount];
+        //Copy data over
+        for (uint i = 0; i < extendAmount; i++)
+            @new[i] = a[i];
+
+        return @new;
+    }
+    /// <summary>
+    /// Reduces the size of the array by shrinkAmount. Will discard data at the end of the array.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="a"></param>
+    /// <param name="shrinkAmount">The amount to reduce by. Must be positive value</param>
+    /// <returns>Returns a new array with the reduced size and any, not lost data</returns>
+    public static T[] Shrink<T>(this T[] a, int shrinkAmount)
+    {
+        if (shrinkAmount <= 0)
+            throw new ArgumentException("extendAmount must be greater than 0");
+
+        if (a.IsNullOrEmpty())
+            return a;
+        //Get smallest value, clamped at 0
+        shrinkAmount = Math.Max(0, a.Length - shrinkAmount);
+
+        T[] @new = new T[shrinkAmount];
+        //If size is not 0, copy data
+        if (shrinkAmount != 0)
+            for (int i = 0; i < shrinkAmount; i++)
+                @new[i] = a[i];
+
+        return @new;
+    }
+    #endregion
+
     #region IsEven
     public static bool IsEven(this byte b)
     {
