@@ -30,8 +30,6 @@ namespace Helpers
                 return false;
             }
 
-
-            overlapPoint = Vector2.zero;
             //Calculate the difference between PI / 2 and the angle difference between the two points
             a2 = (float)(Math.PI / 2);
             a1 -= a2;
@@ -65,12 +63,12 @@ namespace Helpers
             c1 = originA.y - (originA.x * m1);
             c2 = originB.y - (originB.x * m2);
 
-            //mx - mx = c - c
-            //mx - mx
+            //mx1 - mx2 = c2 - c1
+            //mx1 - mx2
             m1 -= m2;
-            //c - c
+            //c2 - c1
             float c = c2 - c1;
-
+            //Calculate point
             overlapPoint = new Vector2(c / m1, (m2 * originB.x) + c2);
             return true;
         }
