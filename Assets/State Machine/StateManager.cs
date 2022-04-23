@@ -12,6 +12,7 @@ namespace StateMachine
     /// </summary>
     public class StateManager<T> : MonoBehaviour
     {
+#if PREVIOUS_STATE_MACHINE
         /// <summary>
         /// A reference to the previous state in case we want to return to it
         /// </summary>
@@ -22,6 +23,7 @@ namespace StateMachine
         /// Reference to the previous active state
         /// </summary>
         public State<T> Previous => _previous;
+#endif
         /// <summary>
         /// The current state
         /// </summary>
@@ -40,10 +42,6 @@ namespace StateMachine
         /// These transitions will always be checked reguardless as to what state we are currently in
         /// </summary>
         public Transition<T>[] globalTransitions = new Transition<T>[0];
-        /// <summary>
-        /// Used to determine when the state machine is first run.
-        /// </summary>
-        private bool _start = false;
 
 #if AUTO_STATE_MACHINE
         /// <summary>
@@ -52,11 +50,6 @@ namespace StateMachine
         [SerializeField]
         private T _targetObj = default;
 #endif
-
-        private void Start()
-        {
-            DoFixedUpdate(ref _targetObj);
-        }
         /// <summary>
         /// Checks the transitions, swaps the current state if any return true.
         /// Then updates the current state if we have one
@@ -66,11 +59,10 @@ namespace StateMachine
             if (EqualityComparer<T>.Default.Equals(obj, default))
                 return;
             //Represents the start function
-            if (!_start)
+            if (_current == null && _target != null)
             {
-                _start = true;
-                if (_current != null)
-                    _current.State_Start(ref obj);
+                _current = _target;
+                _current.State_Start(ref obj);
             }
             //Make sure we have a state we can call
             if (_current != null)
@@ -188,7 +180,9 @@ namespace StateMachine
             //Call end on our current state
             _current.State_End(ref obj);
             //Swap our states around
+#if PREVIOUS_STATE_MACHINE
             _previous = _current;
+#endif
             _current = _target;
             _target = null;
             //call state on our new state

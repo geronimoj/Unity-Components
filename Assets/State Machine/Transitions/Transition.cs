@@ -11,7 +11,7 @@ namespace StateMachine.Transitions
         /// <summary>
         /// The state we should transition to if this transition returns true
         /// </summary>
-        public State<T> targetState;
+        public State<T> targetState = null;
         /// <summary>
         /// An overridable function for creating transitions
         /// </summary>

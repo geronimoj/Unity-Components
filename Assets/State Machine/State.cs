@@ -23,25 +23,24 @@ namespace StateMachine.States
         /// Any transitions this state should ignore
         /// </summary>
         [HideInInspector]
-        public bool[] ignoreTransition;
+        internal bool[] ignoreTransition;
         /// <summary>
         /// The initial Start call. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        public void State_Start(ref T c)
+        internal void State_Start(ref T c)
         {
             ignoreTransition = new bool[IgnoreTransitions.Length];
             for (int i = 0; i < ignoreTransition.Length; i++)
-            {
                 ignoreTransition[i] = IgnoreTransitions[i];
-            }
+
             StateStart(ref c);
         }
         /// <summary>
         /// The initial Update call. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        public void State_Update(ref T c)
+        internal void State_Update(ref T c)
         {
             StateUpdate(ref c);
         }
@@ -49,15 +48,16 @@ namespace StateMachine.States
         /// The initial End call. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        public void State_End(ref T c)
+        internal void State_End(ref T c)
         {
             StateEnd(ref c);
+            ignoreTransition = null;
         }
         /// <summary>
         /// The initial call for every Fixed Update. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        public void State_Fixed(ref T c)
+        internal void State_Fixed(ref T c)
         {
             StateFixedUpdate(ref c);
         }
@@ -65,7 +65,7 @@ namespace StateMachine.States
         /// The initial call for every Late Update. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        public void State_Late(ref T c)
+        internal void State_Late(ref T c)
         {
             StateLateUpdate(ref c);
         }
@@ -109,7 +109,7 @@ namespace StateMachine.States
         /// <param name="enabled">The on/off state to set the transition to</param>
         public void ToggleTransition(Type transition, bool enabled)
         {   //Loop over the transitions
-            for (uint i = 0; i < transitions.Length; i++)
+            for (int i = 0; i < transitions.Length; i++)
                 //Compare type to determine if it should be disabled
                 if (transitions[i].GetType() == transition)
                     //Ignore the transition.
