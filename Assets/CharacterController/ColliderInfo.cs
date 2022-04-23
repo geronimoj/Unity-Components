@@ -184,20 +184,8 @@ namespace CustomController
         /// <returns>Returns true if something was hit</returns>
         public static bool Cast(ColliderInfo c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
         {   //Perform the raycast and get the results
-            RaycastHit[] h = CastAll(c, castVec, offset);
-            hit = new RaycastHit();
-            //If h hit nothing return false
-            if (h == null || h.Length == 0)
-                return false;
-            //Loop through the results and and find the closest valid result
-            for (int i = 0; i < h.Length; i++)
-                //If the distance is not 0, return the hit value
-                if (h[i].distance != 0)
-                {
-                    hit = h[i];
-                    return true;
-                }
-            return false;
+            hit = c.CastCollider(castVec, offset, 0);
+            return hit.distance != 0;
         }
         /// <summary>
         /// Performs a capsual cast using the given colliderInfo with their collisionOffset
@@ -240,20 +228,9 @@ namespace CustomController
         /// <returns>Returns true if something was hit</returns>
         public static bool CastWithOffset(ColliderInfo c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
         {   //Perform the raycast
-            RaycastHit[] h = CastAllWithOffset(c, castVec, offset);
-            hit = new RaycastHit();
-            //If h is null or has a length of 0, return false
-            if (h == null || h.Length == 0)
-                return false;
-            //Loop through the results to find the first valid result and return it
-            for (int i = 0; i < h.Length; i++)
-                if (h[i].distance != 0)
-                {
-                    hit = h[i];
-                    return true;
-                }
+            hit = c.CastCollider(castVec, offset, c.CollisionOffset);
             //Return false if none of the hit results were valid
-            return false;
+            return hit.distance != 0;
         }
         /// <summary>
         /// Performs a cast and returns infromation about everything hit
@@ -307,10 +284,21 @@ namespace CustomController
         /// <remarks>This is primarily used when projecting the collider for movement. When projecting, the collider is projected twice. Once
         /// normally and a second time with the collisionOffset applied (colliderOffset).</remarks>
         protected abstract RaycastHit[] CastAllColliders(Vector3 castVector, Vector3 posOffset, float colliderOffset);
-        #endregion
         /// <summary>
-        /// Draws the collider in gizmos
+        /// Raycasts the collider along castVector and returns the first collider hit.
+        /// </summary>
+        /// <param name="castVector">The direction and distance to raycast the collider</param>
+        /// <param name="posOffset">The offset from the colliders current position in world position</param>
+        /// <param name="colliderOffset">A size increase to the collider. Imagine extruding every face of the collider out by this amount before raycasting</param>
+        /// <returns>Returns the raycastHit information of the collider hit. Returns default raycastHit if not collider was hit</returns>
+        protected abstract RaycastHit CastCollider(Vector3 castVector, Vector3 posOffset, float colliderOffset);
+        #endregion
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Draws the collider in gizmos. Note: This is editor only
         /// </summary>
         public abstract void GizmosDrawCollider();
+#endif
     }
 }

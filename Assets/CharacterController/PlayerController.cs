@@ -14,116 +14,32 @@ namespace CustomController
     /// <remarks>Optional Defines: COLLISION_CALL_IMMEDIATE - Determines if to invoke OnCollision event after calculating for collisions or while</remarks>
     public class Controller<T> : MonoBehaviour where T : ColliderInfo
     {
+        private const int MAX_ATTEMPTS = 100;
         /// <summary>
         /// The collider used for this PlayerController
         /// </summary>
         public T colInfo = null;
 
-        #region Movement
         public MovementDirection direction;
-        /// <summary>
-        /// Get or set the horizontal speed
-        /// </summary>
-        public float HozSpeed
-        {
-            get
-            {
-                return direction.HozSpeed;
-            }
-            set
-            {
-                direction.HozSpeed = value;
-            }
-        }
-        /// <summary>
-        /// Get or Set the vertical speed
-        /// </summary>
-        public float VertSpeed
-        {
-            get
-            {
-                return direction.VertSpeed;
-            }
-            set
-            {
-                direction.VertSpeed = value;
-            }
-        }
-        /// <summary>
-        /// Get or Set the total speed of the player
-        /// </summary>
-        public float TotalSpeed
-        {
-            get
-            {
-                return direction.TotalSpeed;
-            }
-            set
-            {
-                direction.TotalSpeed = value;
-            }
-        }
-        /// <summary>
-        /// Get or Set the direction of movement
-        /// </summary>
-        public Vector3 Direction
-        {
-            get
-            {
-                return direction.Direction;
-            }
-            set
-            {
-                direction.Direction = value;
-            }
-        }
-        /// <summary>
-        /// Get the direction and speed combined
-        /// </summary>
-        public Vector3 TotalVector
-        {
-            get
-            {
-                return direction.TotalVector;
-            }
-        }
-        /// <summary>
-        /// A call function for direction.
-        /// See MovementDirection.SmoothDirection
-        /// </summary>
-        /// <param name="final"></param>
-        /// <param name="time"></param>
-        /// <param name="timer"></param>
-        public void SmoothDirection(Vector3 final, float time, ref float timer)
-        {
-            direction.SmoothDirection(final, time, ref timer);
-        }
-        /// <summary>
-        /// A call function for direction.
-        /// See MovementDirection.SmoothDirection
-        /// </summary>
-        /// <param name="final"></param>
-        /// <param name="velocity"></param>
-        public void SmoothDirection(Vector3 final, float velocity)
-        {
-            direction.SmoothDirection(final, velocity);
-        }
-        #endregion
 
 #if UNITY_EDITOR
         /// <summary>
         /// Used for debugging information
         /// </summary>
-        private Vector3 moveVec = Vector3.zero;
+        private Vector3 _moveVec = Vector3.zero;
 #endif
         /// <summary>
         /// The colliders that should be ignored when moving. This adds child colliders by default
         /// </summary>
-        public List<Collider> collidersToIgnore = new List<Collider>();
+        public HashSet<Collider> collidersToIgnore = null;
         /// <summary>
         /// Everything that was collided with in the previous movement
         /// </summary>
         private readonly List<RaycastHit> _collidedWith = new List<RaycastHit>();
+        /// <summary>
+        /// Used to track raycasts. Since the data does not need to persist, we can make this static.
+        /// </summary>
+        private static readonly Queue<RaycastHit> _temporary = new Queue<RaycastHit>();
         /// <summary>
         /// Called on every collision that has to be calculated.
         /// </summary>
@@ -132,8 +48,7 @@ namespace CustomController
         /// <summary>
         /// The objects that were collided with in the previous movement.
         /// </summary>
-        /// <remarks>This allocates new memory each time it is called.</remarks>
-        public RaycastHit[] CollidedWith => _collidedWith.ToArray();
+        public List<RaycastHit> CollidedWith => _collidedWith;
         /// <summary>
         /// Is true if the controller is on the ground
         /// </summary>
@@ -147,7 +62,7 @@ namespace CustomController
         private void Start()
         {
             colInfo.SetTransform(transform);
-            collidersToIgnore = new List<Collider>(GetComponentsInChildren<Collider>());
+            collidersToIgnore = new HashSet<Collider>(GetComponentsInChildren<Collider>());
         }
         /// <summary>
         /// Moves the player. Contains all collision detection required
@@ -157,42 +72,38 @@ namespace CustomController
         public void Move(Vector3 dir, bool cancelOnFail = false)
         {
 #if UNITY_EDITOR
-            moveVec = dir;
+            _moveVec = dir;
 #endif      //Clear what we collided with
             _collidedWith.Clear();
-            RaycastHit[] hits;
             //Make sure we have a direction to move in
             //Otherwise just update if we are on the ground
             if (dir != Vector3.zero)
             {
                 //Get the collisions
-                hits = MoveToRaycasts(dir, out int offsetIndex);
+                MoveToRaycasts(dir
+#if UNITY_EDITOR
+                    , out int i
+#endif
+                    );
 
-                bool updateHitInfo = false;
+                RaycastHit hit;
                 int attempts = 0;
-                int i;
                 //Loop through the collisions and adjust the current movement direction so that it is not pointing into any normals
-                for (i = 0; (i < hits.Length || updateHitInfo); i++)
-                {   //Ensure we have hits as updateHitInfo can enter this loop even with a length of 0
-                    if (hits.Length == 0)
-                        break;
-                    //Reset the index and don't update hit info. this is done so that we loop through all hits again
-                    if (updateHitInfo)
-                    {
-                        updateHitInfo = false;
-                        i = 0;
-                    }
-
+                while (_temporary.Count > 0)
+                {   
                     attempts++;
-                    if (attempts > 99)
+                    if (attempts > MAX_ATTEMPTS)
                     {
                         Debug.LogError("Could not solve for collision response. Not moving character");
                         return;
                     }
+
+                    hit = _temporary.Dequeue();
+
                     //Make sure aren't colliding with ourself. This does in turn mean that objects we are too close too cannot be collided with
-                    if (hits[i].distance != 0)
+                    if (hit.distance != 0)
                     {
-                        float dot = Vector3.Dot(hits[i].normal, dir);
+                        float dot = Vector3.Dot(hit.normal, dir);
                         //Make sure we are heading into the normal
                         if (dot < 0)
                         {   //If we can't move there, exit if this bool is true
@@ -200,67 +111,79 @@ namespace CustomController
                                 return;
 
                             //Get a vector from the point we collided with, to he closest point on the surface of the collider
-                            Vector3 curNew = colInfo.GetClosestPoint(hits[i].point, hits[i].normal) - hits[i].point;
+                            Vector3 curNew = colInfo.GetClosestPoint(hit.point, hit.normal) - hit.point;
                             //Get the dot product against the normal (its literally dot that we calculated earlier but positive)
                             dot = Mathf.Abs(dot);
                             //Subtract the dot product from are calculated vector to only get the overshooting amount.
-                            dot -= Vector3.Dot(curNew, hits[i].normal);
+                            dot -= Vector3.Dot(curNew, hit.normal);
                             //One last check that we 100% are definately colliding with the surface
                             //If Dot is < 0, then we would be moved into the wall rather than away.
                             if (dot > 0)
                             {
                                 //We then apply this as a vector along the normal of the hit surface with a bit of extra stuff to adjust the movement vector away from the wall
-                                dir += hits[i].normal * (dot);
-                                //Tell ourself to update the movement information
-                                updateHitInfo = true;
+                                dir += hit.normal * (dot);
                                 //Store what we collided with
-                                _collidedWith.Add(hits[i]);
+                                _collidedWith.Add(hit);
 #if COLLISION_CALL_IMMEDIATE
                                 //Invoke the event
-                                if (OnCollision != null)
-                                    OnCollision.Invoke(this, hits[i]);
+                                OnCollision?.Invoke(this, hit);
+#endif
+                                //Tell ourself to update the movement information
+                                MoveToRaycasts(dir
+#if UNITY_EDITOR
+                                    , out i
+#endif
+                                    );
+#if UNITY_EDITOR
+                                i++;
 #endif
                             }
-                            else
-                                Debug.Log("Somehow not intersecting for collision");
                         }
-                        //This is just to make sure that the last hit check actually gets updated
-                        if (updateHitInfo)
-                            hits = MoveToRaycasts(dir, out offsetIndex);
                     }
+#if UNITY_EDITOR
                     else
                     {
-                        if (i < offsetIndex)
+                        if (i < 0)
                             //If this debug message is being called, we have a big problem
-                            Debug.LogWarning("In collider: " + hits[i].transform.gameObject.name);
+                            Debug.LogWarning("Too close to surface: " + hit.transform.gameObject.name);
                         else
                             //This Debug message is ok to see
-                            Debug.LogWarning("Too close to surface: " + hits[i].transform.gameObject.name);
+                            Debug.LogWarning("In collider: " + hit.transform.gameObject.name);
                     }
+                    //The hit data shrinked so we are getting closer to checking the surface raycasts
+                    i--;
+#endif
                 }
 #if UNITY_EDITOR
-                //Draw the movement and then move us along it
-                Debug.DrawLine(colInfo.GetLowestPoint(), colInfo.GetLowestPoint() + dir, Color.magenta, 20f);
+                {
+                    //Draw the movement and then move us along it
+                    Vector3 lowest = colInfo.GetLowestPoint();
+                    Debug.DrawLine(lowest, lowest + dir, Color.magenta, 20f);
+                }
 #endif          //MOVE
                 transform.Translate(dir, Space.World);
 #if !COLLISION_CALL_IMMEDIATE
 
                 if (OnCollision != null)
                     //Invoke the event afterwards
-                    for (i = 0; i < hits.Length; i++)
-                        OnCollision.Invoke(this, hits[i]);
+                    foreach(RaycastHit h in _temporary)
+                        OnCollision(this, h);
 #endif
 
             }
             //Do a raycast down to check if we are on the ground
-            hits = MoveToRaycasts(colInfo.GravityDirection * 1e-3f, out int _);
+            MoveToRaycasts(colInfo.GravityDirection * 1e-3f
+#if UNITY_EDITOR
+                , out int _
+#endif
+                );
             //Loop through the downwards raycast results and check if any of them meet the on ground conditions
-            for (int i = 0; i < hits.Length; i++)
-                if (colInfo.ValidSlope(hits[i].normal))
+            foreach(RaycastHit hit in _temporary)
+                if (colInfo.ValidSlope(hit.normal))
                 {   //If we just entered onGround, then change our movement vector to be that direction
                     //This exists to help with exiting from slopes we can't stand on. However, in turn, its causes other issues with going up small un-ramped bumps, 
                     //causing the player to drift on them. So we also check that the point we hit is below us, so that small ledges at our height aren't affected
-                    if (!colInfo.OnGround && (hits[i].point - colInfo.GetLowestPoint()).y < 0)
+                    if (!colInfo.OnGround && (hit.point - colInfo.GetLowestPoint()).y < 0)
                         direction.HozDirection = dir.normalized;
                     //We found one of them so set us to be on the ground, and set previous ground
                     colInfo.OnGround = true;
@@ -276,43 +199,45 @@ namespace CustomController
         /// <param name="dir">The direction with a magnitude of distance the player should be moved</param>
         /// <param name="cancelOnFail">If true, the player will not be moved if dir is changed</param>
         [Obsolete("Use Move instead. Because this, infact, does not teleport you...")]
-        public void MoveTo(Vector3 dir, bool cancelOnFail = false)
-        {
-            Move(dir, cancelOnFail);
-        }
+        public void MoveTo(Vector3 dir, bool cancelOnFail = false) => Move(dir, cancelOnFail);
         /// <summary>
         /// Performs the raycasts to detect collisions for MoveTo
         /// </summary>
         /// <param name="dir">The direction & magnitude of the raycasts</param>
         /// <param name="offsetIndex">The index that the output hitInfo is from the second raycast instead of the first</param>
         /// <returns>An array containing hitInfo from two raycasts. One with radius, the other with radius + offset</returns>
-        private RaycastHit[] MoveToRaycasts(Vector3 dir, out int offsetIndex)
+        private void MoveToRaycasts(Vector3 dir
+#if UNITY_EDITOR
+            , out int offsetIndex
+#endif
+            )
         {   //Raycast for the players regular collider
             RaycastHit[] regular = ColliderInfo.CastAll(colInfo, dir);
             //Raycast for the players collider with the offset
             RaycastHit[] withOffset = ColliderInfo.CastAllWithOffset(colInfo, dir);
-            //Sort them by distance. Closest ones should be checked first
-            System.Array.Sort(regular, Conditions.CompareDist);
-            System.Array.Sort(withOffset, Conditions.CompareDist);
             //Remove the colliders we are supposed to ignore
             //This is inefficient and should be solved
             //Combine the raycast results
-            List<RaycastHit> total = new List<RaycastHit>();
+#if UNITY_EDITOR
             offsetIndex = 0;
-            for (int i = 0; i < regular.Length + withOffset.Length; i++)
-            {
-                if (i >= regular.Length && !collidersToIgnore.Contains(withOffset[i - regular.Length].collider))
-                    total.Add(withOffset[i - regular.Length]);
-                else if (i < regular.Length && !collidersToIgnore.Contains(regular[i].collider))
+#endif
+            _temporary.Clear();
+            //Repeat for the offset checks
+            foreach (RaycastHit h in withOffset)
+                if (!collidersToIgnore.Contains(h.collider))
                 {
-                    total.Add(regular[i]);
-                    offsetIndex += 1;
+                    _temporary.Enqueue(h);
+#if UNITY_EDITOR
+                    offsetIndex++;
+#endif
                 }
-            }
-            return total.ToArray();
+            //Make sure hit colliders are not to be ignored
+            foreach (RaycastHit h in regular)
+                if (!collidersToIgnore.Contains(h.collider))
+                    _temporary.Enqueue(h);
         }
 
-        #region UNITYEDITOR
+#region UNITYEDITOR
 #if UNITY_EDITOR
         /// <summary>
         /// Draw debugging information
@@ -324,9 +249,9 @@ namespace CustomController
 
             colInfo.GizmosDrawCollider();
 
-            Gizmos.DrawLine(transform.position, transform.position + moveVec);
+            Gizmos.DrawLine(transform.position, transform.position + _moveVec);
         }
 #endif
-        #endregion
+#endregion
     }
 }

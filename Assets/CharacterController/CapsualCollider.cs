@@ -429,13 +429,18 @@ namespace CustomController
             return h;
         }
 
+        protected override RaycastHit CastCollider(Vector3 castVector, Vector3 posOffset, float colliderOffset)
+        {
+            Physics.CapsuleCast(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius, castVector.normalized, out RaycastHit h, castVector.magnitude);
+            return h;
+        }
+
+#if UNITY_EDITOR
         public override void GizmosDrawCollider()
         {
             Gizmos.DrawWireSphere(GetOriginPosition() + Orientation * UpperHeight, Radius);
             Gizmos.DrawWireSphere(GetOriginPosition() - Orientation * LowerHeight, Radius);
         }
-
-        #region Static Functions
-        #endregion
+#endif
     }
 }
