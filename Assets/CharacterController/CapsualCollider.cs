@@ -8,7 +8,7 @@ namespace CustomController
     /// Stores the players capsual collider information with related access and manipulation functions
     /// </summary>
     [System.Serializable]
-    public class CapsualCollider : ColliderInfo
+    public sealed class CapsualCollider : ColliderInfo
     {
         /// <summary>
         /// The collider for this collider :P
