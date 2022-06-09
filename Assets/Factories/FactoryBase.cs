@@ -1,4 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿//Create by Luke Jones - A long time ago
+
+using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -11,10 +13,10 @@ namespace Factories
     public abstract class Factory<T> : FactoryBase
     {
         /// <summary>
-        /// List of the selectable modes
+        /// List of the selectable T
         /// </summary>
         [SerializeField]
-        private List<T> _modes = new List<T>();
+        private List<T> _data = new List<T>();
         /// <summary>
         /// The value that represents null/nothing. Some data types cannot be nulled or new-ed
         /// </summary>
@@ -26,21 +28,21 @@ namespace Factories
         /// </summary>
         public T NullValue => _nullValue;
         /// <summary>
-        /// The number of modes stored
+        /// The number of T stored
         /// </summary>
-        public int Length => _modes.Count;
+        public int Length => _data.Count;
         /// <summary>
-        /// Gets a mode via index
+        /// Gets a T via index
         /// </summary>
         /// <param name="index">The index of the mode</param>
-        /// <returns>The mode to return. Returns null if the index is invalid</returns>
+        /// <returns>The T to return. Returns null if the index is invalid</returns>
         public T this[int index]
         {
             get
             {   //Make sure index is valid
-                if (index < 0 || index >= _modes.Count)
+                if (index < 0 || index >= _data.Count)
                     return _nullValue;
-                return _modes[index];
+                return _data[index];
             }
         }
         /// <summary>
@@ -51,19 +53,19 @@ namespace Factories
         public int this[T m]
         {
             get
-            {   //Loop over the modes
+            {   //Loop over the T
                 for (int i = 0; i < Length; i++)
-                    //If the mode is the given mode return the index of it
-                    if (_modes[i].Equals(m))
+                    //If the T is the given T return the index of it
+                    if (_data[i].Equals(m))
                         return i;
                 //Return an invalid index
                 return -1;
             }
         }
         /// <summary>
-        /// Readonly version of the modes.
+        /// Readonly version of the T.
         /// </summary>
-        public ReadOnlyCollection<T> Modes => _modes.AsReadOnly();
+        public ReadOnlyCollection<T> Data => _data.AsReadOnly();
     }
     /// <summary>
     /// Ultimate base class for all factories. This is something for the FactoryInitializer to do

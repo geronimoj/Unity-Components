@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿//Create by Luke Jones - A long time ago
+
+using UnityEngine;
 
 namespace Factories
 {
@@ -17,7 +19,14 @@ namespace Factories
             FactoryBase[] factories = Resources.LoadAll<FactoryBase>("Factories");
             //Loop over the loaded factories and initialize them
             foreach (FactoryBase f in factories)
-                f.Initialize();
+            {
+                try
+                {
+                    f.Initialize();
+                }
+                catch (System.Exception e)
+                { Debug.LogException(e); }
+            }
         }
     }
 }
