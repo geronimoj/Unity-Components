@@ -46,10 +46,10 @@ namespace Factories
             }
         }
         /// <summary>
-        /// Gets the index of a mode from a mode
+        /// Gets the index of T
         /// </summary>
-        /// <param name="m">The mode to get the index of</param>
-        /// <returns>Returns the index of the mode. Returns -1 if it could not be found</returns>
+        /// <param name="m">The T to get the index of</param>
+        /// <returns>Returns the index of the T. Returns -1 if it could not be found</returns>
         public int this[T m]
         {
             get
