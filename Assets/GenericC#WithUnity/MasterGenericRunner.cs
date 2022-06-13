@@ -17,18 +17,22 @@ namespace GenericsEvents
         /// Is the master generic runner currently running over a foreach loop
         /// </summary>
         private static bool s_looping = false;
-#if ORDERED_GENERICS
-    private static List<IUnityEvents> s_generics = new List<IUnityEvents>();
-#else
         /// <summary>
-        /// IUnityEvents to call Update on
+        /// IUnityEvents to call Update, Fixed & LateUpdate on
         /// </summary>
+#if ORDERED_GENERICS
+        private static List<Wrapper> s_generics = new List<Wrapper>();
+#else
         private static HashSet<IUnityEvents> s_generics = new HashSet<IUnityEvents>();
 #endif
         /// <summary>
         /// IUnityEvents to call Awake and Start on
         /// </summary>
+#if ORDERED_GENERICS
+        private static List<Wrapper> s_toInitialize = new List<Wrapper>();
+#else
         private static List<IUnityEvents> s_toInitialize = new List<IUnityEvents>();
+#endif
         /// <summary>
         /// IUnityEvents that need to be unsubscribed but we are currently in a foreach loop so its not possible
         /// </summary>
@@ -37,9 +41,13 @@ namespace GenericsEvents
         /// Subscribe to start recieving Update calls
         /// </summary>
         /// <param name="obj"></param>
-        public static void Subscribe(IUnityEvents obj)
+        public static void Subscribe(IUnityEvents obj
+#if ORDERED_GENERICS
+            , int executionOrder = 0
+#endif
+            )
         {
-            if (obj == null || s_generics.Contains(obj))
+            if (obj == null || Contains(obj))
                 return;
 
             try
@@ -50,7 +58,12 @@ namespace GenericsEvents
             {
                 Debug.LogError(e.ToString());
             }
+#if ORDERED_GENERICS
+            Wrapper w = new Wrapper(obj, executionOrder);
+            Add(w, s_generics);
+#else
             s_generics.Add(obj);
+#endif
         }
         /// <summary>
         /// Unsubscribe to stop recieving Update calls
@@ -58,7 +71,7 @@ namespace GenericsEvents
         /// <param name="obj"></param>
         public static void UnSubscribe(IUnityEvents obj)
         {
-            if (obj == null || !s_generics.Contains(obj))
+            if (obj == null || !Contains(obj))
                 return;
 
             try
@@ -75,20 +88,32 @@ namespace GenericsEvents
                 s_toRemove.Enqueue(obj);
                 return;
             }
-
+#if ORDERED_GENERICS
+            Remove(obj, s_generics);
+#else
             s_generics.Remove(obj);
+#endif
         }
         /// <summary>
         /// Queues for Awake & Start calls before subscribing for Update calls
         /// </summary>
         /// <param name="obj"></param>
-        public static void Instantiate(IUnityEvents obj)
+        public static void Instantiate(IUnityEvents obj
+#if ORDERED_GENERICS
+                                    , int executionOrder = 0
+#endif
+            )
         {
-            if (obj == null || s_generics.Contains(obj))
+            if (obj == null || Contains(obj))
                 return;
 
             obj.OnSubscribe();
+#if ORDERED_GENERICS
+            Wrapper w = new Wrapper(obj, executionOrder);
+            Add(w, s_toInitialize);
+#else
             s_toInitialize.Add(obj);
+#endif
         }
         /// <summary>
         /// Initializes any queued objects for Awake & Start
@@ -99,6 +124,34 @@ namespace GenericsEvents
                 return;
 
             s_looping = true;
+#if ORDERED_GENERICS
+            //Awake
+            foreach (Wrapper wrapper in s_toInitialize)
+            {
+                try
+                {
+                    wrapper.obj.Awake();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.ToString());
+                }
+            }
+            //Start
+            foreach (Wrapper wrapper in s_toInitialize)
+            {
+                try
+                {
+                    wrapper.obj.Start();
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError(e.ToString());
+                }
+                //Store as its initialized
+                Add(wrapper, s_generics);
+            }
+#else
             //Awake
             foreach (IUnityEvents obj in s_toInitialize)
             {
@@ -124,7 +177,8 @@ namespace GenericsEvents
                 }
                 //Store as its initialized
                 s_generics.Add(obj);
-            }
+        }
+#endif
             s_looping = false;
             UnSubscribeAfterForeach();
         }
@@ -141,11 +195,46 @@ namespace GenericsEvents
             while (s_toRemove.Count > 0)
             {
                 e = s_toRemove.Dequeue();
+#if ORDERED_GENERICS
+                Remove(e, s_generics);
+#else
                 s_generics.Remove(e);
+#endif
             }
         }
 
-        #region UNITY FUNCTIONS
+        private static bool Contains(IUnityEvents obj)
+        {
+#if ORDERED_GENERICS
+            foreach (var e in s_generics)
+                if (e.Equals(obj))
+                    return true;
+
+            return false;
+#else
+            return s_generics.Contains(obj);
+#endif
+        }
+#if ORDERED_GENERICS
+        private static void Add(Wrapper w, List<Wrapper> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+                if (w.executionOrder >= list[i].executionOrder)
+                {
+                    list.Insert(i, w);
+                    break;
+                }
+            //Probably first or last item
+            list.Add(w);
+        }
+
+        private static void Remove(IUnityEvents w, List<Wrapper> list)
+        {
+            list.RemoveAll((wrapper) => wrapper.Equals(w));
+        }
+#endif
+
+#region UNITY FUNCTIONS
         private void Awake()
         {   //Spawned through runtime initializeOnLoad
             if (s_spawned)
@@ -164,11 +253,19 @@ namespace GenericsEvents
             Initialize();
             //Do Update
             s_looping = true;
+#if ORDERED_GENERICS
+            foreach (Wrapper w in s_generics)
+            {
+                try
+                {
+                    w.obj.Update();
+#else
             foreach (IUnityEvents obj in s_generics)
             {
                 try
                 {
                     obj.Update();
+#endif
                 }
                 catch (Exception e)
                 {
@@ -183,11 +280,19 @@ namespace GenericsEvents
         private void FixedUpdate()
         {   //Don't allow direct removal of IUnityEvents from s_generics
             s_looping = true;
+#if ORDERED_GENERICS
+            foreach (Wrapper w in s_generics)
+            {
+                try
+                {
+                    w.obj.FixedUpdate();
+#else
             foreach (IUnityEvents obj in s_generics)
             {
                 try
                 {
                     obj.FixedUpdate();
+#endif
                 }
                 catch (Exception e)
                 {
@@ -202,11 +307,19 @@ namespace GenericsEvents
         private void LateUpdate()
         {   //Don't allow direct removal of IUnityEvents from s_generics
             s_looping = true;
+#if ORDERED_GENERICS
+            foreach (Wrapper w in s_generics)
+            {
+                try
+                {
+                    w.obj.LateUpdate();
+#else
             foreach (IUnityEvents obj in s_generics)
             {
                 try
                 {
                     obj.LateUpdate();
+#endif
                 }
                 catch (Exception e)
                 {
@@ -217,9 +330,9 @@ namespace GenericsEvents
             s_looping = false;
             UnSubscribeAfterForeach();
         }
-        #endregion
+#endregion
 
-        #region AUTO SETUP
+#region AUTO SETUP
         /// <summary>
         /// Spawns a master generic runner at runtime to remove the need to spawn it manually.
         /// </summary>
@@ -232,7 +345,25 @@ namespace GenericsEvents
             DontDestroyOnLoad(new GameObject("MasterGenericRunner", typeof(MasterGenericRunner)));
             s_spawned = true;
         }
-        #endregion
+#endregion
+
+#if ORDERED_GENERICS
+        private class Wrapper
+        {
+            public int executionOrder = 0;
+            public IUnityEvents obj = null;
+
+            public Wrapper(IUnityEvents i, int order)
+            {
+                obj = i;
+                executionOrder = order;
+            }
+
+            public bool Equals(Wrapper other) => obj == other.obj;
+
+            public bool Equals(IUnityEvents other) => obj == other;
+        }
+#endif
     }
     /// <summary>
     /// Interface with function callbacks
