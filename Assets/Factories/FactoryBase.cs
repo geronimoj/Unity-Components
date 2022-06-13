@@ -68,6 +68,25 @@ namespace Factories
         public ReadOnlyCollection<T> Data => _data.AsReadOnly();
     }
     /// <summary>
+    /// Singleton variant of the Factory
+    /// </summary>
+    /// <typeparam name="T">The derived class that you want the Instance to be</typeparam>
+    public abstract class SingletonFactory<T> : FactoryBase where T : SingletonFactory<T>
+    {
+        /// <summary>
+        /// Instance of this Factory
+        /// </summary>
+        public static T Instance;
+        /// <summary>
+        /// Sets the instance to be this.
+        /// </summary>
+        public override void Initialize()
+        {
+            Instance = (T)this;
+        }
+    }
+
+    /// <summary>
     /// Ultimate base class for all factories. This is something for the FactoryInitializer to do
     /// </summary>
     public abstract class FactoryBase : ScriptableObject
