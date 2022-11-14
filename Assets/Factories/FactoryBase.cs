@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Factories
 {
     /// <summary>
-    /// Base class for factories for storing data
+    /// Base class for factories for storing data: List Variant
     /// </summary>
     /// <typeparam name="T">The type of factory this is</typeparam>
     public abstract class Factory<T> : FactoryBase
@@ -66,6 +66,76 @@ namespace Factories
         /// Readonly version of the T.
         /// </summary>
         public ReadOnlyCollection<T> Data => _data.AsReadOnly();
+    }
+    /// <summary>
+    /// Base class for factories for storing data: Dictionary Variant
+    /// </summary>
+    /// <typeparam name="TKey"></typeparam>
+    /// <typeparam name="TValue"></typeparam>
+    public abstract class Factory<TKey, TValue> : FactoryBase
+    {
+        /// <summary>
+        /// List of the selectable T
+        /// </summary>
+        [SerializeField]
+        private List<TValue> _data = new List<TValue>();
+        /// <summary>
+        /// Replace with SERIALIZABLE DICTIONARY IF AVAILABLE
+        /// </summary>
+        private Dictionary<TKey, TValue> _dicData = null;
+        /// <summary>
+        /// The value that represents null/nothing. Some data types cannot be nulled or new-ed
+        /// </summary>
+        [Tooltip("The return value that represents null/nothing")]
+        [SerializeField]
+        private TValue _nullValue = default;
+        /// <summary>
+        /// The default value
+        /// </summary>
+        public TValue NullValue => _nullValue;
+        /// <summary>
+        /// The number of T stored
+        /// </summary>
+        public int Length => _dicData.Count;
+        /// <summary>
+        /// Gets a T via index
+        /// </summary>
+        /// <param name="index">The index of the mode</param>
+        /// <returns>The T to return. Returns null if the index is invalid</returns>
+        public TValue this[TKey index]
+        {
+            get
+            {   
+                return _dicData[index];
+            }
+        }
+        /// <summary>
+        /// Gets the index of T
+        /// </summary>
+        /// <param name="m">The T to get the index of</param>
+        /// <returns>Returns the index of the T. Returns -1 if it could not be found</returns>
+        public TKey this[TValue m]
+        {
+            get
+            {   
+                return ConvertToKey(m);
+            }
+        }
+
+        protected abstract TKey ConvertToKey(TValue value);
+
+        public override void Initialize()
+        {
+            _dicData = new Dictionary<TKey, TValue>();
+
+            foreach(var item in _data)
+            {
+                TKey key = ConvertToKey(item);
+                _dicData.Add(key, item);
+            }
+
+            _data = null;
+        }
     }
     /// <summary>
     /// Variant that only has a static instance.
