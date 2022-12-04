@@ -60,5 +60,16 @@ namespace StateMachine.Transitions
         /// <param name="c">A reference to the player controller</param>
         /// <returns>Returns true if the condition is met</returns>
         protected abstract bool IfElseCondition(ref T c);
+        /// <summary>
+        /// Clones the IF state & ELSE IF state
+        /// </summary>
+        /// <param name="cloneInstance"></param>
+        protected override void InternalClone(Transition<T> cloneInstance)
+        {   //Clone the If else states
+            If_ElseIfTransition<T> _this = (If_ElseIfTransition<T>)cloneInstance;
+
+            _this._ifState = _ifState.Clone();
+            _this._elseIfState = _elseIfState.Clone();
+        }
     }
 }

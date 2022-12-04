@@ -34,7 +34,8 @@ namespace StateMachine.Transitions
                 StateManager<T>.temp_clonedTransitions.Add(this, ret);
                 InternalClone(ret);
                 //Clone target state
-                targetState = targetState.Clone();
+                if (targetState)
+                    targetState = targetState.Clone();
             }
 
             return ret;

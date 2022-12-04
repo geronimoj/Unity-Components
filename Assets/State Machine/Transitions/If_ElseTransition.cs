@@ -36,5 +36,16 @@ namespace StateMachine.Transitions
         /// <param name="ctrl">Reference to the object</param>
         /// <returns>Returns true if the ifState should be returned to</returns>
         protected abstract bool Condition(ref T ctrl);
+        /// <summary>
+        /// Clones the IF state & ELSE state
+        /// </summary>
+        /// <param name="cloneInstance"></param>
+        protected override void InternalClone(Transition<T> cloneInstance)
+        {   //Clone the If else states
+            If_ElseTransition<T> _this = (If_ElseTransition<T>)cloneInstance;
+
+            _this._ifState = _ifState.Clone();
+            _this._elseState = _elseState.Clone();
+        }
     }
 }

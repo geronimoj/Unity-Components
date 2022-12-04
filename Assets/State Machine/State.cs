@@ -133,7 +133,8 @@ namespace StateMachine.States
                 InternalClone(ret);
                 //Clone transitions
                 for (int i = 0; i < transitions.Length; i++)
-                    transitions[i] = transitions[i].Clone();
+                    if (transitions[i])
+                        transitions[i] = transitions[i].Clone();
             }
 
             return ret;
@@ -142,6 +143,6 @@ namespace StateMachine.States
         /// Overridable function for doing any additional clone behaviour that Instantiate would not perform.
         /// </summary>
         /// <param name="cloneInstance"></param>
-        protected virtual void InternalClone(State<T> cloneInstance) {}
+        protected virtual void InternalClone(State<T> cloneInstance) { }
     }
 }
