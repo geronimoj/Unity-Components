@@ -7,6 +7,7 @@ using UnityEngine;
 
 public static class SystemExtensions
 {
+    #region ActionExtensions
     /// <summary>
     /// Null catches & try catches action
     /// </summary>
@@ -83,7 +84,9 @@ public static class SystemExtensions
         }
     }
     //Yea I can't be bothered to do this all the way up to 16. Theres probably a better way anyways
+    #endregion
 
+    #region BooleanCompression
     /// <summary>
     /// Stores an array of bools in a byte or byte array. Allocates a new array
     /// </summary>
@@ -168,6 +171,7 @@ public static class SystemExtensions
                 trueIndex++;
             }
     }
+
     //Note: I should probably make long, int, short and byte variants of these functions to allow for non-byte array storage.
     /// <summary>
     /// Stores up to 8 bools in a single byte. (Pretty sure it doesn't allocate memory)
@@ -369,4 +373,194 @@ public static class SystemExtensions
             outBools[i] = t % 2 == 1;
         }
     }
+    #endregion
+
+    #region Boolean Extract/Intert
+    /// <summary>
+    /// Extract a bit from a byte array.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool Extract(byte[] bytes, int index)
+    {
+        if (index > bytes.Length * 8)
+            throw new IndexOutOfRangeException();
+
+        int i1 = index / 8;
+        int i2 = index % 8;
+
+        byte b = bytes[i1];
+        b >>= i2;
+
+        return b % 2 == 1;
+    }
+    /// <summary>
+    /// Sets a specific bit in the byte array
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <param name="value"></param>
+    public static void Insert(in byte[] bytes, int index, bool value)
+    {
+        if (index > bytes.Length * 8)
+            throw new IndexOutOfRangeException();
+        //Get index
+        int i1 = index / 8;
+        int i2 = index % 8;
+
+        byte valueAsByte = (byte)(value ? 0b_0000_0001 : 0b_0000_0000); // Can't be bothered manually casting.
+        valueAsByte <<= i2;
+
+        byte flush = 0b_1111_1111;
+        flush ^= valueAsByte;
+        //This should leave all bits unchanged except for the bit we are about to edit
+        bytes[i1] &= flush;
+        bytes[i1] |= valueAsByte;
+    }
+    /// <summary>
+    /// Extract a bit from a byte.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool Extract(this byte bytes, int index)
+    {
+        if (index > 8)
+            throw new IndexOutOfRangeException();
+
+        byte b = bytes;
+        b >>= index;
+
+        return b % 2 == 1;
+    }
+    /// <summary>
+    /// Sets a specific bit in the byte
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <param name="value"></param>
+    public static void Insert(this ref byte bytes, int index, bool value)
+    {
+        if (index > 8)
+            throw new IndexOutOfRangeException();
+
+        byte valueAsByte = (byte)(value ? 0b_0000_0001 : 0b_0000_0000); // Can't be bothered manually casting.
+        valueAsByte <<= index;
+
+        byte flush = 0b_1111_1111;
+        flush ^= valueAsByte;
+        //This should leave all bits unchanged except for the bit we are about to edit
+        bytes &= flush;
+        bytes |= valueAsByte;
+    }
+    /// <summary>
+    /// Extract a bit from a short.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool Extract(this short bytes, int index)
+    {
+        if (index > 16)
+            throw new IndexOutOfRangeException();
+
+        short b = bytes;
+        b >>= index;
+
+        return b % 2 == 1;
+    }
+    /// <summary>
+    /// Sets a specific bit in the short
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <param name="value"></param>
+    public static void Insert(this ref short bytes, int index, bool value)
+    {
+        if (index > 16)
+            throw new IndexOutOfRangeException();
+
+        short valueAsByte = (byte)(value ? 0b_0000_0001 : 0b_0000_0000); // Can't be bothered manually casting.
+        valueAsByte <<= index;
+
+        short flush = 0b_1111_1111;
+        flush ^= valueAsByte;
+        //This should leave all bits unchanged except for the bit we are about to edit
+        bytes &= flush;
+        bytes |= valueAsByte;
+    }
+    /// <summary>
+    /// Extract a bit from an int.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool Extract(this int bytes, int index)
+    {
+        if (index > 32)
+            throw new IndexOutOfRangeException();
+
+        int b = bytes;
+        b >>= index;
+
+        return b % 2 == 1;
+    }
+    /// <summary>
+    /// Sets a specific bit in the int
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <param name="value"></param>
+    public static void Insert(this ref int bytes, int index, bool value)
+    {
+        if (index > 32)
+            throw new IndexOutOfRangeException();
+
+        int valueAsByte = (value ? 0b_0000_0001 : 0b_0000_0000); // Can't be bothered manually casting.
+        valueAsByte <<= index;
+
+        int flush = 0b_1111_1111;
+        flush ^= valueAsByte;
+        //This should leave all bits unchanged except for the bit we are about to edit
+        bytes &= flush;
+        bytes |= valueAsByte;
+    }
+    /// <summary>
+    /// Extract a bit from a long.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool Extract(this long bytes, int index)
+    {
+        if (index > 64)
+            throw new IndexOutOfRangeException();
+
+        long b = bytes;
+        b >>= index;
+
+        return b % 2 == 1;
+    }
+    /// <summary>
+    /// Sets a specific bit in the long
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <param name="index"></param>
+    /// <param name="value"></param>
+    public static void Insert(this ref long bytes, int index, bool value)
+    {
+        if (index > 32)
+            throw new IndexOutOfRangeException();
+
+        long valueAsByte = (value ? 0b_0000_0001 : 0b_0000_0000); // Can't be bothered manually casting.
+        valueAsByte <<= index;
+
+        long flush = 0b_1111_1111;
+        flush ^= valueAsByte;
+        //This should leave all bits unchanged except for the bit we are about to edit
+        bytes &= flush;
+        bytes |= valueAsByte;
+    }
+    #endregion
 }
