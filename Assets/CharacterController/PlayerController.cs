@@ -49,6 +49,10 @@ namespace CustomController
         /// The objects that were collided with in the previous movement.
         /// </summary>
         public List<RaycastHit> CollidedWith => _collidedWith;
+
+        private Transform _standingOn = null;
+        private Vector3 _offsetFromFloor = Vector3.zero;
+
         /// <summary>
         /// Is true if the controller is on the ground
         /// </summary>
@@ -187,10 +191,14 @@ namespace CustomController
                         direction.HozDirection = dir.normalized;
                     //We found one of them so set us to be on the ground, and set previous ground
                     colInfo.OnGround = true;
+                    //Track ground
+                    _standingOn = hit.transform;
+                    _offsetFromFloor = hit.transform.position - transform.position;
                     return;
                 }
             //Set us to not be on the ground. We can only hit this if the previous checks failed
             colInfo.OnGround = false;
+            _standingOn = null;
         }
         /// <summary>
         /// Moves the player. Contains all collision detection required.
@@ -236,6 +244,24 @@ namespace CustomController
                 if (!collidersToIgnore.Contains(h.collider))
                     _temporary.Enqueue(h);
         }
+#if PLAYERCONTROLLER_MOVING_PLATFORMS
+        private void LateUpdate()
+        {
+            CheckFloorHasMoved();
+        }
+
+        private void CheckFloorHasMoved()
+        {   //Is there a floor we are on
+            if (!_standingOn)
+                return;
+            //Get current position difference between were we should be relative to the ground transform
+            Vector3 posDif = _standingOn.position - transform.position;
+            posDif -= _offsetFromFloor;
+            //If the difference is significant, move the player along the difference to account for possible collisions
+            if (posDif.magnitude > 0.01f)
+                Move(posDif);
+        }
+#endif
 
 #region UNITYEDITOR
 #if UNITY_EDITOR
