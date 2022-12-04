@@ -25,6 +25,12 @@ namespace StateMachine
         public State<T> Previous => _previous;
 #endif
         /// <summary>
+        /// To clone the current state before first execution
+        /// </summary>
+        [SerializeField]
+        [Tooltip("To clone the current state & transitions (and their states, etc) before its first execution")]
+        private bool cloneBeforeExecution = false;
+        /// <summary>
         /// The current state
         /// </summary>
         [SerializeField]
@@ -62,6 +68,10 @@ namespace StateMachine
             if (_current == null && _target != null)
             {
                 _current = _target;
+
+                if (cloneBeforeExecution)
+                    CloneStatesAndTransitions();
+
                 _current.State_Start(ref obj);
             }
             //Make sure we have a state we can call
@@ -199,5 +209,37 @@ namespace StateMachine
             //Swap the state
             SwapStates(ref obj);
         }
+
+        #region Cloning
+        /// <summary>
+        /// Temporary storage for cloned states to avoid re-cloning the same state
+        /// </summary>
+        internal static Dictionary<State<T>, State<T>> temp_clonedStated = null;
+        /// <summary>
+        /// Temporary storage for cloned transitions to avoid re-cloning the same transition
+        /// </summary>
+        internal static Dictionary<Transition<T>, Transition<T>> temp_clonedTransitions = null;
+        /// <summary>
+        /// Clones the currently used states & transitions then starts using them.
+        /// </summary>
+        public void CloneStatesAndTransitions()
+        {   //Must contain current
+            if (!_current)
+                return;
+            //Allocate storage for tracking cloned states (only needed temporary but the states & transitions need access to them.
+            temp_clonedStated = new Dictionary<State<T>, State<T>>();
+            temp_clonedTransitions = new Dictionary<Transition<T>, Transition<T>>();
+
+            //Clone current state
+            _current = _current.Clone();
+            //Clone global transitions
+            for(int i =0; i < globalTransitions.Length; i++)
+                globalTransitions[i] = globalTransitions[i].Clone();
+
+            //Clear lists as no-longer needed
+            temp_clonedStated = null;
+            temp_clonedTransitions = null;
+        }
+        #endregion
     }
 }

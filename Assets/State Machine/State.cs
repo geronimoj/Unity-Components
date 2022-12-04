@@ -116,6 +116,32 @@ namespace StateMachine.States
                     //We could break here but I'd rather continue for other transitions of same type
                     ignoreTransition[i] = enabled;
         }
+        /// <summary>
+        /// Returns a clone of the current state
+        /// </summary>
+        /// <returns></returns>
+        internal State<T> Clone()
+        {
+            State<T> ret;
+            //Check if already cloned
+            if (StateManager<T>.temp_clonedStated.ContainsKey(this))
+                ret = StateManager<T>.temp_clonedStated[this];
+            else
+            {   //Create new clone
+                ret = Instantiate(this);
+                StateManager<T>.temp_clonedStated.Add(this, ret);
+                InternalClone(ret);
+                //Clone transitions
+                for (int i = 0; i < transitions.Length; i++)
+                    transitions[i] = transitions[i].Clone();
+            }
 
+            return ret;
+        }
+        /// <summary>
+        /// Overridable function for doing any additional clone behaviour that Instantiate would not perform.
+        /// </summary>
+        /// <param name="cloneInstance"></param>
+        protected virtual void InternalClone(State<T> cloneInstance) {}
     }
 }
