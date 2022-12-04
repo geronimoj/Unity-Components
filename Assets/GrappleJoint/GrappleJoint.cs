@@ -18,7 +18,6 @@ namespace CustomPhysics.Joints
         /// <summary>
         /// The point we are anchored to
         /// </summary>
-        [SerializeField]
         [Tooltip("The point the grapple joint is connected to.")]
         private Vector3 _anchorPoint = Vector3.zero;
         /// <summary>
