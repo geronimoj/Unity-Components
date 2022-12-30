@@ -1,0 +1,16 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ac6f1e519996a348a0acaa5ea8df64b, type: 3}
+  m_Name: DoWallRun
+  m_EditorClassIdentifier: 
+  targetState: {fileID: 11400000, guid: 23e85adcc605d1a40a97d7ab98d924f9, type: 2}
+  ignoreMe: 0

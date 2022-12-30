@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31f50c34b9e40154cabc4d29833f8938, type: 3}
+  m_Name: WallRunMove
+  m_EditorClassIdentifier: 
+  transitions:
+  - {fileID: 11400000, guid: 4f89f7d2e71ba16408d39a9c8a398fcc, type: 2}
+  - {fileID: 11400000, guid: 2cd03bb87396a1c4d94aa8fbb66085bc, type: 2}
+  - {fileID: 11400000, guid: 1a20ba4610ecd134396859d2228c253b, type: 2}
+  - {fileID: 11400000, guid: 5916a5d323f2b6f4cae59dc49addbd70, type: 2}
+  - {fileID: 11400000, guid: 0eb42059dd3810341ba92cf26400e6e0, type: 2}
+  IgnoreTransitions: 0000000001
+  ignoreTransition: 0000000001
+  jumpOffPercent: 0.1

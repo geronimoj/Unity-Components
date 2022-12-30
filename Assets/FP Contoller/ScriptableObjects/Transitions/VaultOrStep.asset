@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13081c938abbb854eaaaf6b2be41bb78, type: 3}
+  m_Name: VaultOrStep
+  m_EditorClassIdentifier: 
+  targetState: {fileID: 11400000, guid: 5ee0c14bb3d08f1489429a72e1c853b3, type: 2}
+  ifState: {fileID: 11400000, guid: 668db4a7cbcbef5459dd30327637fefc, type: 2}
+  elseIfState: {fileID: 11400000, guid: 605e5c7be81f8764eaa4ea5565e446ee, type: 2}
+  checkDist: 1.5

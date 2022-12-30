@@ -1,0 +1,16 @@
+{
+    "name": "FPController",
+    "references": [
+        "GUID:4fb890a4449a2404c981a688e3909642",
+        "GUID:463769a6fcc376444b277b5c02e39ab1"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

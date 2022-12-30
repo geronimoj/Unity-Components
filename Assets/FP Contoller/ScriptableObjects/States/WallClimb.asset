@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4aadcf28b4311d04b9b929a81ca29f9b, type: 3}
+  m_Name: WallClimb
+  m_EditorClassIdentifier: 
+  transitions:
+  - {fileID: 11400000, guid: 17d31cdb1214b624ea4c5a1a764099b6, type: 2}
+  - {fileID: 11400000, guid: 2cd03bb87396a1c4d94aa8fbb66085bc, type: 2}
+  - {fileID: 11400000, guid: 56fd560a244901a4dbb87cf834c50819, type: 2}
+  - {fileID: 11400000, guid: 1a20ba4610ecd134396859d2228c253b, type: 2}
+  IgnoreTransitions: 01000000
+  ignoreTransition: 0100
+  vertSpeedCancel: -3
+  floatTime: 0.5
+  maxDist: 2.5
+  minDist: 1.5
+  climbSpeed: 4

@@ -1,0 +1,102 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6921661593886013257
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6921661593886013262}
+  - component: {fileID: 6921661593886013263}
+  - component: {fileID: 6921661593886013250}
+  m_Layer: 0
+  m_Name: Player
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6921661593886013262
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6921661593886013257}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1, z: 0}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6921661593886013263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6921661593886013257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1030c6eb633a4b4a8876ad217b73140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  colInfo:
+    radius: 0.5
+    lowerHeight: 1
+    upperHeight: 0.5
+    collisionOffset: 0.01
+    slopeAngle: 45
+    positionOffsetIsGlobal: 1
+  acceleration: 3
+  belowMinAcceleration: 20
+  decelleration: 50
+  minSpeed: 3
+  jumpForce: 7
+  gravity: 19.6
+  sensitivity: 1000
+  minTurnTime: 0.1
+  inputTime: 0.1
+  direction:
+    maxHoz: 7.5
+    maxVert: 100
+  respawnPosition: {x: 0, y: 2, z: 0}
+  camFol: {fileID: 0}
+  forceRotateTime: 0.1
+  speedText: {fileID: 0}
+  stepHeight: 0.2
+  lowLedgeHeight: 1
+  vaultDistance: 2
+  playerVaultHeight: 1
+  pullUpSpeed: 3
+  shimmySpeed: 1
+  jumpOffPercent: 0.1
+  cameraAngle: 5
+  vertSpeedCancel: -3
+  floatTime: 0.5
+  maxDist: 2.5
+  minDist: 1.5
+  climbSpeed: 4
+  wallClimbAngle: 30
+  openSpaceRequired: 0.5
+  atLedgeDistance: 0.1
+--- !u!114 &6921661593886013250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6921661593886013257}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 221931d636ce6fa41825fe81112057f8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  previous: {fileID: 0}
+  current: {fileID: 11400000, guid: 9881eeb87c3f62d4480604da59d02993, type: 2}
+  target: {fileID: 0}
+  globalTransitions:
+  - {fileID: 11400000, guid: 1a20ba4610ecd134396859d2228c253b, type: 2}
