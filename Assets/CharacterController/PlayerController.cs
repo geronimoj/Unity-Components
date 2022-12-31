@@ -63,7 +63,7 @@ namespace CustomController
         /// <summary>
         /// Sets the transform and adds child colliders to colliders to ignore
         /// </summary>
-        private void Start()
+        protected virtual void Start()
         {
             colInfo.SetTransform(transform);
             collidersToIgnore = new HashSet<Collider>(GetComponentsInChildren<Collider>());
