@@ -6,18 +6,19 @@
 [System.Serializable]
 public class MyInput
 {
+    const string INVALID_AXIS = "NULL";
     /// <summary>
     /// The name of the input
     /// </summary>
     [Tooltip("The name used for searching for this input")]
-    public string name = "NULL";
+    public string name = INVALID_AXIS;
 #if UNITY_STANDALONE_WIN
     /// <summary>
     /// The Axis that this input represents from Input.GetAxis
     /// name variable will be used if this is left as "NULL"
     /// </summary>
     [Tooltip("The corresponding Unity Axis. Defaults to name if NULL")]
-    public string axisName = "NULL";
+    public string axisName = INVALID_AXIS;
 #endif
     /// <summary>
     /// A copy of the previous value. Used for checking for a new input
@@ -79,7 +80,7 @@ public class MyInput
         //Store the previous values data
         previousValue = value;
         //Update the input
-        if (axisName != "NULL")
+        if (!string.IsNullOrEmpty(axisName) || axisName == INVALID_AXIS || !string.IsNullOrWhiteSpace(axisName))
             value = Input.GetAxis(axisName);
         //A backup just in case axisName is null. This occurs after swapping between Android & Windows mode
         else

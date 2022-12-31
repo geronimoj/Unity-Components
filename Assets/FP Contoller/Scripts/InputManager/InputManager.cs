@@ -33,7 +33,7 @@ public class InputManager : MonoBehaviour
     /// <returns>Returns 0 and logs an error if the input could not be found. Otherwise returns the value of the input</returns>
     public static float GetInput(string name)
     {   if (inputs == null)
-            return 0;
+            return Input.GetAxis(name);
         //Loop through the inputs and search for the correct input
         for (int i = 0; i < inputs.Length; i++)
             if (inputs[i].name == name)

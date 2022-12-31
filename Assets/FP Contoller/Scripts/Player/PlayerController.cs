@@ -336,7 +336,7 @@ public class PlayerController : CustomController.PlayerController
     /// <summary>
     /// The point to teleport the player too if their y position is too low
     /// </summary>
-    public Vector3 respawnPosition;
+    public Transform respawnPosition;
     //Class References
     /// <summary>
     /// A reference to the StateManager
@@ -541,11 +541,6 @@ public class PlayerController : CustomController.PlayerController
         if (speedText == null)
             Debug.LogWarning("No speedometer set");
     }
-
-    private void Start()
-    {
-        colInfo.SetTransform(transform);
-    }
     /// <summary>
     /// Rotates the player and calls the update function for the current state
     /// </summary>
@@ -553,7 +548,7 @@ public class PlayerController : CustomController.PlayerController
     {
         //Check the player hasn't fallen to far
         if (transform.position.y < -100f)
-            transform.position = respawnPosition;
+            transform.position = respawnPosition.position;
 
         if (speedText != null)
             speedText.text = "Speed: " + direction.TotalSpeed.ToString("F2");
@@ -588,32 +583,6 @@ public class PlayerController : CustomController.PlayerController
         curAngle += angleDif;
 
         return new Vector3(Mathf.Sin(curAngle * Mathf.Deg2Rad), 0, Mathf.Cos(curAngle * Mathf.Deg2Rad));
-    }
-    /// <summary>
-    /// Performs the raycasts to detect collisions for MoveTo
-    /// </summary>
-    /// <param name="dir">The direction & magnitude of the raycasts</param>
-    /// <param name="offsetIndex">The index that the output hitInfo is from the second raycast instead of the first</param>
-    /// <returns>An array containing hitInfo from two raycasts. One with radius, the other with radius + offset</returns>
-    private RaycastHit[] MoveToRaycasts(Vector3 dir, out int offsetIndex)
-    {   //Raycast for the players regular collider
-        RaycastHit[] regular = ColliderInfo.CastAll(colInfo, dir);
-        //Raycast for the players collider with the offset
-        RaycastHit[] withOffset = ColliderInfo.CastAllWithOffset(colInfo, dir);
-        //Sort them by distance. Closest ones should be checked first
-        System.Array.Sort(regular, Conditions.CompareDist);
-        System.Array.Sort(withOffset, Conditions.CompareDist);
-        //Combine the raycast results
-        RaycastHit[] total = new RaycastHit[regular.Length + withOffset.Length];
-        for (int i = 0; i < total.Length; i++)
-        {
-            if (i >= regular.Length)
-                total[i] = withOffset[i - regular.Length];
-            else
-                total[i] = regular[i];
-        }
-        offsetIndex = regular.Length;
-        return total;
     }
     /// <summary>
     /// Rotates the player based on the Inputs Mouse Y and Mouse X
