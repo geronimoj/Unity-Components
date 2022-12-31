@@ -583,7 +583,7 @@ PlayerSettings:
   webGLThreadsSupport: 0
   webGLDecompressionFallback: 0
   scriptingDefineSymbols:
-    1: AUTO_STATE_MACHINE;UNITY
+    1: UNITY
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}
