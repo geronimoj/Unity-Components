@@ -129,6 +129,6 @@ public class VaultBase : State<PlayerController>
         //Reduce the distance left to move
         moveDist -= moveVec.magnitude;
         //Move the player
-        c.MoveTo(moveVec);
+        c.Move(moveVec);
     }
 }

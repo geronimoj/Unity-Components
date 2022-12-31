@@ -29,7 +29,7 @@ public class WallRun : State<PlayerController>
         {   //Reduce our vertical speed but with half the gravity
             ctrl.VertSpeed -= (ctrl.Gravity / 2) * Time.deltaTime;
             //Move them along currentDir. The horizontal plane is multiplied by hozSpeed but the y axis is multiplied by vertSpeed
-            ctrl.MoveTo(ctrl.TotalVector * Time.deltaTime);
+            ctrl.Move(ctrl.TotalVector * Time.deltaTime);
         }
         else
         {   //There is no wall to wall run on so re-enable all the transitions

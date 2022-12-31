@@ -72,7 +72,7 @@ public class LedgeMove : State<PlayerController>
                 //Do a raycast from above the player at the expected movement position, if it returns false, the ledge is still there so we are allowed to move
                 if (Physics.Raycast(ctrl.colInfo.GetHighestPoint() + moveDir, ctrl.CheckDir, ctrl.CheckDirRange + 0.01f))
                     //Move the player
-                    ctrl.MoveTo(moveDir, true);
+                    ctrl.Move(moveDir, true);
             }
         }
         else

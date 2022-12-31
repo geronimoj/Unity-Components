@@ -114,7 +114,7 @@ public class GroundMoveState : State<PlayerController>
             moveVec.y = (hit.point + hit.normal * (ctrl.colInfo.Radius + ctrl.colInfo.CollisionOffset)).y - ctrl.colInfo.GetLowerPoint().y;
 
         //Move the character
-        ctrl.MoveTo(moveVec);
+        ctrl.Move(moveVec);
         ctrl.CheckDir = ctrl.Direction;
     }
 }

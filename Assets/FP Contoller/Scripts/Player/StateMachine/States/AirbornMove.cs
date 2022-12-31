@@ -28,6 +28,6 @@ public class AirbornMove : State<PlayerController>
     {   //Reduce the players vertical speed by their gravity
         ctrl.VertSpeed -= ctrl.Gravity * Time.deltaTime;
         //Move them along currentDir. The horizontal plane is multiplied by hozSpeed but the y axis is multiplied by vertSpeed
-        ctrl.MoveTo(ctrl.TotalVector * Time.deltaTime);
+        ctrl.Move(ctrl.TotalVector * Time.deltaTime);
     }
 }

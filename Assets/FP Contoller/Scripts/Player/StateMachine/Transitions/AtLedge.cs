@@ -53,7 +53,7 @@ public class AtLedge : Transition<PlayerController>
             //Calculate the positions horizontal position
             move -= ctrl.CheckDir *  ctrl.colInfo.TrueRadius;
             //Move the player to the destination
-            ctrl.MoveTo(move - ctrl.transform.position);
+            ctrl.Move(move - ctrl.transform.position);
 
             return true;
         }

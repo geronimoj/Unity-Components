@@ -60,7 +60,7 @@ public class WallClimbMove : State<PlayerController>
         {   //This is a bit un-necessary but we need it for if the player chooses to jump off of a given ledge
             ctrl.ExpectedDir = hit.normal;
             //Move the player up the wall
-            ctrl.MoveTo(ctrl.TotalVector * Time.deltaTime);
+            ctrl.Move(ctrl.TotalVector * Time.deltaTime);
         }
     }
 
