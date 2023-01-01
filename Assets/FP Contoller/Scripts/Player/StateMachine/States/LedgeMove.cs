@@ -11,14 +11,6 @@ using CustomController;
 public class LedgeMove : State<PlayerController>
 {   
     /// <summary>
-    /// The index of the DidJump transition
-    /// </summary>
-    private int didJumpIndex = 0;
-    /// <summary>
-    /// The index of the DoClamber transition
-    /// </summary>
-    private int doClamberLedgeIndex = 0;
-    /// <summary>
     /// Sets the players horizontal and vertical speed to 0
     /// </summary>
     /// <param name="ctrl">A reference to the player controller</param>
