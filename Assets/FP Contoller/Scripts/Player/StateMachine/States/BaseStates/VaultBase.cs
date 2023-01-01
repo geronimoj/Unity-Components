@@ -73,7 +73,7 @@ public class VaultBase : State<PlayerController>
             if (transitions[i] as OnGround_ElseAirborne != null)
                 onGroundIndex = i;
         //Then set it to be ignored
-        ToggleTransition(typeof(OnGround), true);
+        ToggleTransition(typeof(OnGround_ElseAirborne), true);
         //Set the players speed to the vault speed
         ctrl.direction.HozSpeed = moveSpeedDuringState;
         //Call any derived functions stuffs
@@ -105,7 +105,7 @@ public class VaultBase : State<PlayerController>
         if (moveDist <= 0)
         {
             //Exit
-            ToggleTransition(typeof(OnGround), false);
+            ToggleTransition(typeof(OnGround_ElseAirborne), false);
         }
     }
     /// <summary>

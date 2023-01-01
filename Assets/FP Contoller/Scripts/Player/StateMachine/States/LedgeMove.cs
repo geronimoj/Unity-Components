@@ -19,16 +19,6 @@ public class LedgeMove : State<PlayerController>
         base.StateStart(ref ctrl);
         ctrl.VertSpeed = 0;
         ctrl.HozSpeed = 0;
-        //Loop through the transitions and find, if any, of the transitions are DidJump and DoClamberLedge.
-        //We need to know them for later
-        for (int i = 0; i < transitions.Length; i++)
-        {   //Is this transition DidJump?
-            if ((transitions[i] as DidJump) != null)
-                didJumpIndex = i;
-            //Is this transition DoClamberLedge?
-            else if ((transitions[i] as DoClamberLedge) != null)
-                doClamberLedgeIndex = i;
-        }
     }
     /// <summary>
     /// Moves the player along the ledge if they made an input.

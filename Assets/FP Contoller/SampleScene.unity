@@ -419,6 +419,7 @@ GameObject:
   - component: {fileID: 410858082}
   - component: {fileID: 410858081}
   - component: {fileID: 410858080}
+  - component: {fileID: 410858083}
   m_Layer: 0
   m_Name: EventSystem
   m_TagString: Untagged
@@ -474,6 +475,35 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &410858083
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410858079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ae778aec9a24d014392465e5c8d98b76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Inputs:
+  - name: Horizontal
+    axisName: 
+  - name: Vertical
+    axisName: 
+  - name: Jump
+    axisName: 
+  - name: Crouch
+    axisName: 
+  - name: Grab
+    axisName: 
+  - name: Quick Turn
+    axisName: 
+  - name: Mouse X
+    axisName: 
+  - name: Mouse Y
+    axisName: 
 --- !u!1 &656595316
 GameObject:
   m_ObjectHideFlags: 0

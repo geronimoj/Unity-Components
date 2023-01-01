@@ -66,7 +66,7 @@ namespace CustomController
         protected virtual void Start()
         {
             colInfo.SetTransform(transform);
-            collidersToIgnore = new HashSet<Collider>(GetComponentsInChildren<Collider>());
+            collidersToIgnore = new HashSet<Collider>(GetComponentsInChildren<Collider>(true));
         }
         /// <summary>
         /// Moves the player. Contains all collision detection required

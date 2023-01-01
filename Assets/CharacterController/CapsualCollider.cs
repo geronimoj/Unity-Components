@@ -395,7 +395,10 @@ namespace CustomController
         /// Updates the location of the Collider in the game scene
         /// </summary>
         public void UpdateCollider()
-        {   //Apply height, offset, rotation & scale.
+        {
+            if (!collider)
+                return;
+            //Apply height, offset, rotation & scale.
             collider.radius = TrueRadius;
             collider.height = Height;
             //Get a point from the top of the collider and move it down by half the height
