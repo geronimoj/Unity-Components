@@ -116,6 +116,12 @@ namespace StateMachine.States
                     //We could break here but I'd rather continue for other transitions of same type
                     ignoreTransition[i] = enabled;
         }
+        /// <summary>
+        /// Returns the ignored state of the transition (true if the transition is being ignored)
+        /// False is the transition does not exist on the state
+        /// </summary>
+        /// <param name="transition"></param>
+        /// <returns></returns>
         public bool TransitionEnabled(Type transition)
         {   //Loop over the transitions
             for (int i = 0; i < transitions.Length; i++)
