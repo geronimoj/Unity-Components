@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4dcc3b032a7a4c40a51bc9919361330, type: 3}
   m_Name: OnGroundElseAirborne
   m_EditorClassIdentifier: 
-  targetState: {fileID: 11400000, guid: 9881eeb87c3f62d4480604da59d02993, type: 2}
-  ifState: {fileID: 11400000, guid: 9881eeb87c3f62d4480604da59d02993, type: 2}
-  elseState: {fileID: 11400000, guid: 243084c5558179f48b986776e0174144, type: 2}
+  targetState: {fileID: 11400000, guid: 243084c5558179f48b986776e0174144, type: 2}
+  _ifState: {fileID: 11400000, guid: 9881eeb87c3f62d4480604da59d02993, type: 2}
+  _elseState: {fileID: 11400000, guid: 243084c5558179f48b986776e0174144, type: 2}

@@ -8,8 +8,8 @@ public class OnGroundElseAirborneEditor : Editor
     SerializedProperty elseState;
     private void OnEnable()
     {
-        ifState = serializedObject.FindProperty("ifState");
-        elseState = serializedObject.FindProperty("elseState");
+        ifState = serializedObject.FindProperty("_ifState");
+        elseState = serializedObject.FindProperty("_elseState");
     }
 
     public override void OnInspectorGUI()
