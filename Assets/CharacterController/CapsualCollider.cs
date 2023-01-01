@@ -423,7 +423,7 @@ namespace CustomController
 
         protected override RaycastHit[] CastAllColliders(Vector3 castVector, Vector3 posOffset, float colliderOffset)
         {   //Perform the raycast
-            RaycastHit[] h = Physics.CapsuleCastAll(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius, castVector.normalized, castVector.magnitude);
+            RaycastHit[] h = Physics.CapsuleCastAll(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + collisionOffset, castVector.normalized, castVector.magnitude);
             //Sort the hit info by length so that the closest is first
             System.Array.Sort(h, Conditions.CompareDist);
             return h;
@@ -431,7 +431,7 @@ namespace CustomController
 
         protected override RaycastHit CastCollider(Vector3 castVector, Vector3 posOffset, float colliderOffset)
         {
-            Physics.CapsuleCast(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius, castVector.normalized, out RaycastHit h, castVector.magnitude);
+            Physics.CapsuleCast(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + collisionOffset, castVector.normalized, out RaycastHit h, castVector.magnitude);
             return h;
         }
 
