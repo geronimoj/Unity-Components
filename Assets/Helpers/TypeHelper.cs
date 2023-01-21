@@ -96,5 +96,76 @@ namespace Helpers
             //Return the field
             return field;
         }
+        /// <summary>
+        /// Copies the variables (fields) of an object into another object. Only fields of identical name & type are copied.
+        /// </summary>
+        /// <param name="from">The object to copy from</param>
+        /// <param name="to">The object to copy to</param>
+        /// <param name="flags">The flags used to define which variables to move</param>
+        /// <returns>Returns paramameter "to". If "to" is a class, this can be ignored. If a struct, pass by values rules require this</returns>
+        /// <remarks>This does not care about the Types of "from" and "to", it matches variables by Type & name. This WILL NOT create a new "to" object. 
+        /// You need to ensure that "to" is already allocated, otherwise use templated variant</remarks>
+        public static object CopyVariables(in object from, object to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        {   //Cannot copy null
+            if (from == null || to == null)
+                throw new NullReferenceException("Cannot copy " + ((from == null) ? "Null" : "'From'")
+                    + " into " + ((to == null) ? "Null" : "'To'"));
+
+            Type fType = from.GetType();
+            Type tType = to.GetType();
+            //Gather all fields
+            var fromFields = fType.GetFields(flags);
+            var toFields = tType.GetFields(flags);
+            //Copy fields of matching type & name
+            foreach(FieldInfo field in fromFields)
+                foreach(FieldInfo destinationField in toFields)
+                {   //Incorrect type
+                    if (field.FieldType != destinationField.FieldType
+                        //Name incorrect
+                        || field.Name != destinationField.Name)
+                        continue;
+                    //Copy the field over
+                    destinationField.SetValue(to, field.GetValue(from));
+                }
+            // Return "to". This is necessary if copying to a struct, we need to return the struct since, if we use "out object to", we don't get to know "to"'s type
+            // Now, we could make this a templated function but its simpler flow for most cases
+            return to;
+        }
+        /// <summary>
+        /// Copies the variables (fields) of an object into another object. Only fields of identical name & type are copied. This does not care about type
+        /// </summary>
+        /// <typeparam name="TOutType">The type that "to" should be</typeparam>
+        /// <param name="from">The object to copy variables from</param>
+        /// <param name="to">The object variables were coppied into</param>
+        /// <param name="flags">The flags used to define which variables to move</param>
+        /// <remarks>This does not care about the Types of "from" and "to", it matches variables by Type & name. 
+        /// This WILL create a new "to" object, use the non-templated type if you do not want to allocate a new object</remarks>
+        public static void CopyVariables<TOutType>(in object from, out TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        {
+            if (from == null)
+                throw new NullReferenceException("Cannot copy from 'null' object");
+            //Create instance
+            to = Activator.CreateInstance<TOutType>();
+            //Incase TToType is struct, we need to assign to after function. If TToType is a class, this does nothing.
+            //to = (TOutType)CopyVariables(in from, to, flags);
+            //----- I don't do this anymore (despite making logic in one place) because it removes a pass by value for struct types. If TOutType contains a lot of data
+            //      & is a struct, this significantly improves performance by not having to copy the return type again
+
+            Type fType = from.GetType();
+            //Gather fields
+            var fromFields = fType.GetFields(flags);
+            var toFields = typeof(TOutType).GetFields(flags);
+            //Copy fields of matching type & name
+            foreach (FieldInfo field in fromFields)
+                foreach (FieldInfo destinationField in toFields)
+                {   //Incorrect type
+                    if (field.FieldType != destinationField.FieldType
+                        //Name incorrect
+                        || field.Name != destinationField.Name)
+                        continue;
+                    //Copy the field over
+                    destinationField.SetValue(to, field.GetValue(from));
+                }
+        }
     }
 }
