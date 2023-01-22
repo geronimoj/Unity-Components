@@ -13,7 +13,7 @@ namespace CodeObjects
         /// Called to run the code
         /// </summary>
         /// <param name="parameters">The parameters of the function</param>
-        public abstract void Run(params object[] parameters);
+        public abstract void Invoke(params object[] parameters);
         /// <summary>
         /// Convinience function for running a collection of scriptable codes. Deals with nulls.
         /// </summary>
@@ -77,7 +77,7 @@ namespace CodeObjects
             //Run in try catch
             try
             {
-                code.Run(parameters);
+                code.Invoke(parameters);
             }
             catch (System.Exception e)
             {
@@ -97,7 +97,7 @@ namespace CodeObjects
             //Run in try catch
             try
             {
-                return code.Run(parameters);
+                return code.Invoke(parameters);
             }
             catch (System.Exception e)
             {
@@ -117,6 +117,6 @@ namespace CodeObjects
         /// </summary>
         /// <param name="parameters">The parameters of the function</param>
         /// <returns>Presumably something, otherwise use the non-templated version</returns>
-        public abstract T Run(params object[] parameters);
+        public abstract T Invoke(params object[] parameters);
     }
 }
