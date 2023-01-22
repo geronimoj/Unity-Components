@@ -8,7 +8,7 @@ namespace Helpers
     /// <summary>
     /// Tools for converting objects into XML
     /// </summary>
-    public class XMLHelper
+    public static class XMLHelper
     {
         /// <summary>
         /// Read or Writes a float into or from XElement

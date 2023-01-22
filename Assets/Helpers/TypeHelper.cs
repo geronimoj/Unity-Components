@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Helpers
 {
-    public class TypeHelper
+    public static class TypeHelper
     {
         /// <summary>
         /// Takes the full name of a class as a string and creates an instance of it, storing it as a base class
