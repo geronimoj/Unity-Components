@@ -5,6 +5,20 @@ public static class Extensions
 {
     private static Random r = null;
     /// <summary>
+    /// Is the string is null or empty
+    /// </summary>
+    /// <param name="string"></param>
+    /// <returns>True if null or empty</returns>
+    /// <remarks>This just calls string.IsNullOrEmpty() Primarily for convenience</remarks>
+    public static bool IsNullOrEmpty(this string @string) => string.IsNullOrEmpty(@string);
+    /// <summary>
+    /// Is the string null or white spaces
+    /// </summary>
+    /// <param name="string"></param>
+    /// <returns>True if string is null or white spaces</returns>
+    /// <remarks>This just calls string.IsNullOrWhiteSpace() Primarily for convenience</remarks>
+    public static bool IsNullOrWhiteSpace(this string @string) => string.IsNullOrWhiteSpace(@string);
+    /// <summary>
     /// Returns true if the array is null or empty
     /// </summary>
     /// <typeparam name="T"></typeparam>
