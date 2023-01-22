@@ -97,15 +97,15 @@ namespace Helpers
             return field;
         }
         /// <summary>
-        /// Copies the variables (fields) of an object into another object. Only fields of identical name & type are copied.
+        /// Copies the fields (fields) of an object into another object. Only fields of identical name & type are copied.
         /// </summary>
         /// <param name="from">The object to copy from</param>
         /// <param name="to">The object to copy to</param>
-        /// <param name="flags">The flags used to define which variables to move</param>
+        /// <param name="flags">The flags used to define which fields to move</param>
         /// <returns>Returns paramameter "to". If "to" is a class, this can be ignored. If a struct, pass by values rules require this</returns>
-        /// <remarks>This does not care about the Types of "from" and "to", it matches variables by Type & name. This WILL NOT create a new "to" object. 
+        /// <remarks>This does not care about the Types of "from" and "to", it matches fields by Type & name. This WILL NOT create a new "to" object. 
         /// You need to ensure that "to" is already allocated, otherwise use templated variant</remarks>
-        public static object CopyVariables(in object from, object to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        public static object CopyFields(in object from, object to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         {   //Cannot copy null
             if (from == null || to == null)
                 throw new NullReferenceException("Cannot copy " + ((from == null) ? "Null" : "'From'")
@@ -132,22 +132,22 @@ namespace Helpers
             return to;
         }
         /// <summary>
-        /// Copies the variables (fields) of an object into another object. Only fields of identical name & type are copied. This does not care about type
+        /// Copies the fields (fields) of an object into another object. Only fields of identical name & type are copied. This does not care about type
         /// </summary>
         /// <typeparam name="TOutType">The type that "to" should be</typeparam>
-        /// <param name="from">The object to copy variables from</param>
-        /// <param name="to">The object variables were coppied into</param>
-        /// <param name="flags">The flags used to define which variables to move</param>
-        /// <remarks>This does not care about the Types of "from" and "to", it matches variables by Type & name. 
+        /// <param name="from">The object to copy fields from</param>
+        /// <param name="to">The object fields were coppied into</param>
+        /// <param name="flags">The flags used to define which fields to move</param>
+        /// <remarks>This does not care about the Types of "from" and "to", it matches fields by Type & name. 
         /// This WILL create a new "to" object, use the non-templated type if you do not want to allocate a new object</remarks>
-        public static void CopyVariables<TOutType>(in object from, out TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        public static void CopyFields<TOutType>(in object from, out TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         {
             if (from == null)
                 throw new NullReferenceException("Cannot copy from 'null' object");
             //Create instance
             to = Activator.CreateInstance<TOutType>();
             //Incase TToType is struct, we need to assign to after function. If TToType is a class, this does nothing.
-            //to = (TOutType)CopyVariables(in from, to, flags);
+            //to = (TOutType)Copyfields(in from, to, flags);
             //----- I don't do this anymore (despite making logic in one place) because it removes a pass by value for struct types. If TOutType contains a lot of data
             //      & is a struct, this significantly improves performance by not having to copy the return type again
 
@@ -166,6 +166,47 @@ namespace Helpers
                     //Copy the field over
                     destinationField.SetValue(to, field.GetValue(from));
                 }
+        }
+        /// <summary>
+        /// Copies all fields from one object to another.
+        /// </summary>
+        /// <typeparam name="TOutType">The type of object</typeparam>
+        /// <param name="from">The object to copy from</param>
+        /// <param name="to">The object with the copied values</param>
+        /// <param name="flags">The flags used to define which fields to move</param>
+        /// <remarks>This variant will create a new instance of "to", use the non-'out' variant if you have already created an instance</remarks>
+        public static void CopyFields<TOutType>(in TOutType from, out TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        {
+            if (from == null)
+                throw new NullReferenceException("Cannot copy from 'null' object");
+            //Create instance
+            to = Activator.CreateInstance<TOutType>();
+            //Gather fields
+            var fields = typeof(TOutType).GetFields(flags);
+            //Copy fields of matching type & name
+            foreach (FieldInfo field in fields)
+                //Copy the field over
+                field.SetValue(to, field.GetValue(from));
+        }
+        /// <summary>
+        /// Copies all fields from one object to another.
+        /// </summary>
+        /// <typeparam name="TOutType">The type of object</typeparam>
+        /// <param name="from">The object to copy from</param>
+        /// <param name="to">The object with the copied values</param>
+        /// <param name="flags">The flags used to define which fields to move</param>
+        /// <remarks>This variant requires "to" to already be initialized</remarks>
+        public static void CopyFields<TOutType>(in TOutType from, TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        {   //Cannot copy null
+            if (from == null || to == null)
+                throw new NullReferenceException("Cannot copy " + ((from == null) ? "Null" : "'From'")
+                    + " into " + ((to == null) ? "Null" : "'To'"));
+            //Gather fields
+            var fields = typeof(TOutType).GetFields(flags);
+            //Copy fields of matching type & name
+            foreach (FieldInfo field in fields)
+                //Copy the field over
+                field.SetValue(to, field.GetValue(from));
         }
     }
 }
