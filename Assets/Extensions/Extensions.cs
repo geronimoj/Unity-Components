@@ -299,4 +299,46 @@ public static class Extensions
         target = Math.Abs(target);
         return target < tolerance;
     }
+    /// <summary>
+    /// Round the floating point value up to the nearest integer value
+    /// </summary>
+    /// <param name="f"></param>
+    /// <returns></returns>
+    public static int RoundUp(this float f)
+    {   //If value is basically an integer type, use value but as int
+        if ((f % 1).Equals(0f, 0.00001f))
+            return (int)f;
+
+        return (int)f + 1;
+    }
+    /// <summary>
+    /// Round the floating point value down to the nearest integer value
+    /// </summary>
+    /// <param name="f"></param>
+    /// <returns></returns>
+    public static int RoundDown(this float f)
+    {
+        return (int)f;
+    }
+    /// <summary>
+    /// Round the double value up to the nearest integer value
+    /// </summary>
+    /// <param name="d"></param>
+    /// <returns></returns>
+    public static int RoundUp(this double d)
+    {
+        if ((d % 1).Equals(0f, 0.00001f))
+            return (int)d;
+
+        return (int)d + 1;
+    }
+    /// <summary>
+    /// Round the double value down to the nearest integer value
+    /// </summary>
+    /// <param name="d"></param>
+    /// <returns></returns>
+    public static int RoundDown(this double d)
+    {
+        return (int)d;
+    }
 }
