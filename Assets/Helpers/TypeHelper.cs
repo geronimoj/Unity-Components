@@ -196,7 +196,7 @@ namespace Helpers
         /// <param name="to">The object with the copied values</param>
         /// <param name="flags">The flags used to define which fields to move</param>
         /// <remarks>This variant requires "to" to already be initialized</remarks>
-        public static void CopyFields<TOutType>(in TOutType from, TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+        public static TOutType CopyFields<TOutType>(in TOutType from, TOutType to, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
         {   //Cannot copy null
             if (from == null || to == null)
                 throw new NullReferenceException("Cannot copy " + ((from == null) ? "Null" : "'From'")
@@ -207,6 +207,8 @@ namespace Helpers
             foreach (FieldInfo field in fields)
                 //Copy the field over
                 field.SetValue(to, field.GetValue(from));
+
+            return to;
         }
     }
 }
