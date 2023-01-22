@@ -142,6 +142,78 @@ public static class Extensions
 
         return @new;
     }
+    /// <summary>
+    /// Checks if all values in a boolean array are true
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns>Returns true if all values are true</returns>
+    public static bool AllTrue(this bool[] a)
+    {
+        foreach (var b in a)
+            if (!b)
+                return false;
+
+        return true;
+    }
+    /// <summary>
+    /// Checks if all values in a boolean array are false
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns>Returns true if all values are true</returns>
+    public static bool AllFalse(this bool[] a)
+    {
+        foreach (var b in a)
+            if (b)
+                return false;
+
+        return true;
+    }
+    /// <summary>
+    /// Returns the number of true booleans in a boolean array
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns></returns>
+    public static int TrueCount(this bool[] a)
+    {
+        int count = 0;
+        foreach (var b in a)
+            if (b)
+                count++;
+
+        return count;
+    }
+    /// <summary>
+    /// Returns the number of false booleans in a boolean array
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns></returns>
+    public static int FalseCount(this bool[] a)
+    {
+        int count = 0;
+        foreach (var b in a)
+            if (!b)
+                count++;
+
+        return count;
+    }
+    /// <summary>
+    /// Returns a value between 0 - 1 representing the percentage of True values in the boolean array
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns></returns>
+    public static float TruePercent(this bool[] a)
+    {
+        return TrueCount(a) / (float)a.Length;
+    }
+    /// <summary>
+    /// Returns a value between 0 - 1 representing the percentage of False values in the boolean array
+    /// </summary>
+    /// <param name="a"></param>
+    /// <returns></returns>
+    public static float FalsePercent(this bool[] a)
+    {
+        return FalseCount(a) / (float)a.Length;
+    }
     #endregion
 
     #region IsEven
