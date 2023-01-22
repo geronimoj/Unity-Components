@@ -210,5 +210,19 @@ namespace Helpers
 
             return to;
         }
+
+        public static object InvokeMethod(in object @object, string methodName, BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, params object[] parameters)
+        {   //Object is null
+            if (@object == null)
+                throw new NullReferenceException("Object is null");
+
+            Type type = @object.GetType();
+            MethodInfo method = type.GetMethod(methodName, flags);
+            //Method not found, error
+            if (method == null)
+                throw new Exception("Method not found");
+            
+            return method.Invoke(@object, parameters);
+        }
     }
 }
