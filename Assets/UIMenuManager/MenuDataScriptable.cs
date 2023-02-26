@@ -165,6 +165,7 @@ namespace MenuManager
             /// <summary>
             /// Name/Key of the menu
             /// </summary>
+            /// <remarks>This isn't necessary amd not recommended to be used as a way of referencing menus as its too volitile.</remarks>
             public readonly string menuName = null;
             /// <summary>
             /// Unique ID of this menu
@@ -332,6 +333,7 @@ namespace MenuManager
             /// <summary>
             /// Name of this menu
             /// </summary>
+            /// <remarks>This isn't necessary amd not recommended to be used as a way of referencing menus as its too volitile.</remarks>
             public string m_menuName;
             /// <summary>
             /// Unique ID of the menu
