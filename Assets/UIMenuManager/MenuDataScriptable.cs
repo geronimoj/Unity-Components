@@ -10,10 +10,20 @@ namespace MenuManager
     [CreateAssetMenu(fileName = "MenuData", menuName = "Menu/Data", order = 0)]
     public class MenuDataScriptable : ScriptableObject
     {
+#if UNITY_EDITOR
+        /// <summary>
+        /// The data used to store important editor information
+        /// </summary>
+        [SerializeField] Editor.MenuEditorData m_editorData = null;
+#endif
         /// <summary>
         /// Data used to generate this menu
         /// </summary>
         [SerializeField] MenuData[] m_menuData = null;
+        /// <summary>
+        /// Dictionary containing the ids of every menu & submenu for easy access
+        /// </summary>
+        private readonly Dictionary<int, Menu> m_menuIdDictioanry = new Dictionary<int, Menu>();
         /// <summary>
         /// Dictionary containing the names of every menu & submenu for easy access
         /// </summary>
@@ -30,7 +40,9 @@ namespace MenuManager
         /// The previously open menu.
         /// </summary>
         private Stack<Menu> m_previousMenu = null;
-
+        /// <summary>
+        /// Initialize
+        /// </summary>
         public void Initialize()
         {   //Already initialized
             if (m_previousMenu != null)
@@ -42,22 +54,26 @@ namespace MenuManager
             m_currentMenu = m_defaultMenu;
             m_currentMenu.Open();
         }
-
+        /// <summary>
+        /// Generate the Menu Objects
+        /// </summary>
         private void CreateMenuObjects()
         {   //Generate the menu objects
             foreach (var data in m_menuData)
             {
-                m_menuNameDictioanry.Add(data.m_menuName, new Menu(data.m_menuName));
+                Menu menu = new Menu(data.m_menuName, data.m_uniqueID);
+                m_menuIdDictioanry.Add(data.m_uniqueID, menu);
+                m_menuNameDictioanry.Add(data.m_menuName, menu);
                 //Set default
                 if (data.m_isDefault)
-                    m_defaultMenu = m_menuNameDictioanry[data.m_menuName];
+                    m_defaultMenu = m_menuIdDictioanry[data.m_uniqueID];
             }
 
             //Initialize data once all menus are generated
             foreach (var data in m_menuData)
             {   //Spawn the menu
-                Menu menu = m_menuNameDictioanry[data.m_menuName];
-                menu.GenerateFromData(data, m_menuNameDictioanry);
+                Menu menu = m_menuIdDictioanry[data.m_uniqueID];
+                menu.GenerateFromData(data, m_menuIdDictioanry);
             }
 
 #if !UNITY_EDITOR
@@ -112,6 +128,21 @@ namespace MenuManager
             RunAction((MenuCommonActions)action);
         }
         /// <summary>
+        /// Get Menu or Submenu via id
+        /// </summary>
+        /// <param name="menuName"></param>
+        /// <returns></returns>
+        public Menu GetMenu(int uniqueID) => m_menuIdDictioanry[uniqueID];
+        /// <summary>
+        /// Get Menu or Submenu via id
+        /// </summary>
+        /// <param name="menuName"></param>
+        /// <returns></returns>
+        public Menu this[int uniqueID]
+        {
+            get => m_menuIdDictioanry[uniqueID];
+        }
+        /// <summary>
         /// Get Menu or Submenu via name
         /// </summary>
         /// <param name="menuName"></param>
@@ -126,13 +157,19 @@ namespace MenuManager
         {
             get => m_menuNameDictioanry[menuName];
         }
-
+        /// <summary>
+        /// Class storing menu
+        /// </summary>
         public class Menu
         {
             /// <summary>
             /// Name/Key of the menu
             /// </summary>
             public readonly string menuName = null;
+            /// <summary>
+            /// Unique ID of this menu
+            /// </summary>
+            public readonly int m_uniqueId = int.MinValue;
 #region OpenClose
             /// <summary>
             /// Is this menu currently open. (for call optimization)
@@ -254,20 +291,29 @@ namespace MenuManager
                 return menu;
             }
             #endregion
-
-            internal Menu(string name)
+            /// <summary>
+            /// Generate a basic menu
+            /// </summary>
+            /// <param name="name"></param>
+            /// <param name="uniqueID"></param>
+            internal Menu(string name, int uniqueID)
             {
                 menuName = name;
+                m_uniqueId = uniqueID;
             }
-
-            internal void GenerateFromData(MenuData data, Dictionary<string, Menu> allMenus)
+            /// <summary>
+            /// Fill in the rest of the menu data
+            /// </summary>
+            /// <param name="data"></param>
+            /// <param name="allMenus"></param>
+            internal void GenerateFromData(MenuData data, Dictionary<int, Menu> allMenus)
             {   //Generate connections
                 foreach (var connection in data.m_connections)
-                    m_connections.Add(connection.key, allMenus[connection.m_menuName]);
+                    m_connections.Add(connection.key, allMenus[connection.m_uniqueID]);
                 //Generate sub menus
-                for (int i = 0; i < data.m_subMenuNames.Length; i++)
+                for (int i = 0; i < data.m_subMenuIds.Length; i++)
                 {
-                    Menu subMenu = allMenus[data.m_subMenuNames[i]];
+                    Menu subMenu = allMenus[data.m_subMenuIds[i]];
                     subMenu.m_parentMenu = this;
                     m_subMenus.Add(i, subMenu);
                 }
@@ -288,9 +334,13 @@ namespace MenuManager
             /// </summary>
             public string m_menuName;
             /// <summary>
+            /// Unique ID of the menu
+            /// </summary>
+            public int m_uniqueID;
+            /// <summary>
             /// Name of sub menus
             /// </summary>
-            public string[] m_subMenuNames;
+            public int[] m_subMenuIds;
             /// <summary>
             /// The connections to other menus
             /// </summary>
@@ -307,7 +357,7 @@ namespace MenuManager
                 /// <summary>
                 /// The name of the connecting menu
                 /// </summary>
-                public string m_menuName;
+                public int m_uniqueID;
             }
         }
     }
