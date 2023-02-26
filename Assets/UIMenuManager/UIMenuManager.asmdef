@@ -1,0 +1,15 @@
+{
+    "name": "UIMenuManager",
+    "references": [
+        "GUID:4f2206f91eae0d347b24f0af2614656d"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
