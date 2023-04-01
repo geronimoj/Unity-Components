@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -17,6 +17,9 @@ namespace Loading
         /// All the tasks currently active for this loading operation.
         /// </summary>
         private static List<ILoadingTask> _allTasks = null;
+
+        private static Dictionary<int, List<ILoadingTask>> _taskGroups = null;
+
         /// <summary>
         /// Invoked when a task updates
         /// </summary>
@@ -25,16 +28,22 @@ namespace Loading
         /// Get information about the current loading bar
         /// </summary>
         /// <returns>Returns the text to display and 0 - 1 progress</returns>
-        public static (string, float) GetLoadingBarInfo()
+        public static (string, float) GetLoadingBarInfo(int taskQueue = 0)
         {
             string message = null;
             float progress = 0f;
-            // Check to avoid divide by 0 error later
-            if (_allTasks != null && _allTasks.Count > 0)
-            {
+            // Avoid errors
+            if (_taskGroups != null && _taskGroups.Count > 0)
+            {   // Make sure we are getting a taskQueue. Otherwise default to highest
+                if (!_taskGroups.ContainsKey(taskQueue))
+                    taskQueue = GetHighestTaskGroup();
+                // Get the queue to use
+                var allTasks = _taskGroups[taskQueue];
+
                 int currentPriority = int.MinValue;
                 ILoadingTask bestTask = null;
-                foreach (var task in _allTasks)
+
+                foreach (var task in allTasks)
                 {   // Find the task with the highest priority
                     var prio = task.GetPriority();
                     if (prio > currentPriority)
@@ -45,11 +54,12 @@ namespace Loading
                     // Sum progress, will divide later
                     progress += task.GetPercentComplete();
                 }
-                // This is the divide by 0 error we want to avoid
-                progress /= _allTasks.Count;
+                // This shouldn't cause a divide by 0 error since the task groups should never have a size of 0.
+                progress /= allTasks.Count;
                 //Get message
                 message = bestTask.GetLoadingMessage();
             }
+
             // Ensure there is a message
             if (message.IsNullOrWhiteSpace())
                 message = DEFAULT_TEXT;
@@ -60,20 +70,34 @@ namespace Loading
         /// Creates a simple loading task.
         /// </summary>
         /// <param name="priority">The loading priority. Defines which loading message to display. Higher priority are displayed first.</param>
+        /// <param name="taskGroup">The group to put the task in. The progress of the highest value, incomplete, group is shown on the loading bar.</param>
         /// <returns>The loading task</returns>
-        public static LoadingTask CreateLoadingTask(int priority)
+        /// <remarks>Task Groups can be used to separate loading tasks. If your game has multiple loading bars displayed or you want to override the
+        /// loading bar with a download bar, you can use taskGroups.</remarks>
+        public static LoadingTask CreateLoadingTask(int priority, int taskGroup = 0)
         {
             LoadingTask task = new LoadingTask
             {
                 _priority = priority
             };
+
+            if (_taskGroups == null)
+                _taskGroups = new Dictionary<int, List<ILoadingTask>>(1);
+            // Get task group
+            if (!_taskGroups.TryGetValue(taskGroup, out List<ILoadingTask> group))
+            {
+                group = new List<ILoadingTask>(10);
+                _taskGroups[taskGroup] = group;
+            }
+
             // Default to size 10
             if (_allTasks == null) // Note: When upgrading project. change to ??= because its less lines of code
                 _allTasks = new List<ILoadingTask>(10);
 
             _allTasks.Add(task);
+            group.Add(task);
 
-            TaskUpdated();
+            OnTaskUpdated();
 
             return task;
         }
@@ -81,20 +105,33 @@ namespace Loading
         /// Create a loading task of special type.
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="priority">The loading priority. Defines which loading message to display. Higher priority are displayed first.</param>
+        /// <param name="taskGroup">The group to put the task in. The progress of the highest value, incomplete, group is shown on the loading bar.</param>
         /// <returns>A new task of the given type</returns>
         /// <remarks>For if you want to create LoadingTasks that write for themself, for systems such as SceneLoading, or Addressable
-        /// asset loading and do not want/need another object to write to its Progress.</remarks>
-        public static T CreateLoadingTask<T>() where T : ILoadingTask
+        /// asset loading and do not want/need another object to write to its Progress.
+        /// 
+        /// Task Groups can be used to separate loading tasks. If your game has multiple loading bars displayed or you want to override the
+        /// loading bar with a download bar, you can use taskGroups.</remarks>
+        public static T CreateLoadingTask<T>(int taskGroup = 0) where T : ILoadingTask
         {
             T task = Activator.CreateInstance<T>();
+
+            if (_taskGroups == null)
+                _taskGroups = new Dictionary<int, List<ILoadingTask>>(1);
+            // Get task group
+            if (!_taskGroups.TryGetValue(taskGroup, out List<ILoadingTask> group))
+            {
+                group = new List<ILoadingTask>(10);
+                _taskGroups[taskGroup] = group;
+            }
             // Default to size 10
             if (_allTasks == null) // Note: When upgrading project. change to ??= because its less lines of code
                 _allTasks = new List<ILoadingTask>(10);
 
             _allTasks.Add(task);
+            group.Add(task);
 
-            TaskUpdated();
+            OnTaskUpdated();
 
             return task;
         }
@@ -103,7 +140,7 @@ namespace Loading
         /// </summary>
         /// <returns></returns>
         public static bool LoadingIsComplete()
-        {
+        {   // Check every task's completion state.
             foreach (var task in _allTasks)
                 if (!task.IsDone())
                     return false;
@@ -116,31 +153,51 @@ namespace Loading
         public static void CleanUpLoading()
         {   // Nothing more to load so clear
             foreach (var task in _allTasks)
-                task.CleanUp();
+                task.Dispose();
 
+            _taskGroups = null;
             _allTasks = null;
 
             // We could, theoretically hand LoadingTask as a struct, with an internal class
             // then, on an event fired here, have it null that class to reduce garbage caused
             // by people not releasing the loading task... Food for thought
-            
+
             // ^ This won't work anymore since we upgraded to using Interfaces. If we remained
             // using a abstract class based system, it could still work.
         }
         /// <summary>
-        /// Runs the cleanup asyncronously.
+        /// Cleans up loading operations for a specific taskGroup to recover memory.
         /// </summary>
-        /// <returns>A task that is handling the cleanup</returns>
-        /// <remarks>This will delay the reuse of the LoadingBarManager until the function completes.
-        /// If you attempt to use LoadingBarManager before the clean up finishes, it may clean up your new loading bar tasks as well.</remarks>
-        public static Task CleanUpLoadingAsync()
+        public static void CleanUpLoading(int taskGroup)
         {
-            return Task.Run(CleanUpLoading);
-        }
+            if (!_taskGroups.TryGetValue(taskGroup, out List<ILoadingTask> tasks))
+                return;
 
-        public static void TaskUpdated()
+            foreach (var task in tasks)
+                task.Dispose();
+
+            _taskGroups.Remove(taskGroup);
+        }
+        /// <summary>
+        /// Manually call when a task updates its progress or loading message to request a UI refresh
+        /// </summary>
+        public static void OnTaskUpdated()
         {
             _onTaskUpdate.SafeInvoke();
+        }
+        /// <summary>
+        /// Gets the highest task group.
+        /// </summary>
+        /// <returns></returns>
+        public static int GetHighestTaskGroup()
+        {
+            int best = int.MinValue;
+
+            foreach (var key in _taskGroups.Keys)
+                if (key > best)
+                    best = key;
+
+            return best;
         }
     }
     /// <summary>
@@ -174,7 +231,7 @@ namespace Loading
         /// <summary>
         /// The task is no-longer needed, clean it up.
         /// </summary>
-        void CleanUp();
+        void Dispose();
     }
 
     /// <summary>
@@ -196,7 +253,7 @@ namespace Loading
                 if (value != _percentComplete)
                 {
                     _percentComplete = value;
-                    LoadingBarManager.TaskUpdated();
+                    LoadingBarManager.OnTaskUpdated();
                 }
             }
         }
@@ -217,7 +274,7 @@ namespace Loading
                 if (value != _loadingMessage)
                 {
                     _loadingMessage = value;
-                    LoadingBarManager.TaskUpdated();
+                    LoadingBarManager.OnTaskUpdated();
                 }
             }
         }
@@ -243,6 +300,6 @@ namespace Loading
         /// </summary>
         /// <returns></returns>
         bool ILoadingTask.IsDone() => IsDone;
-        void ILoadingTask.CleanUp() {}
+        void ILoadingTask.Dispose() { }
     }
 }

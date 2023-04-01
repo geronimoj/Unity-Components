@@ -34,8 +34,8 @@ namespace Loading
         /// Update loading bar as last thing to do in loading cycle
         /// </summary>
         protected virtual void LateUpdate()
-        {   // Refresh loading bar
-            var info = LoadingBarManager.GetLoadingBarInfo();
+        {   // Refresh loading bar, displaying the highest priority task group
+            var info = LoadingBarManager.GetLoadingBarInfo(LoadingBarManager.GetHighestTaskGroup());
             UpdateLoadingBar(info.Item1, info.Item2);
             enabled = false;
         }
