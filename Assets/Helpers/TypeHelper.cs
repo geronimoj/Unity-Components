@@ -36,7 +36,7 @@ namespace Helpers
             {
                 type = (T)obj;
             }
-            catch(Exception e)
+            catch (Exception e)
             { Debug.LogError("Failed to cast " + obj.GetType() + " to " + className + ": " + e.ToString()); return; }
             //Set the base class to be the newly created class
             baseClass = type;
@@ -46,7 +46,7 @@ namespace Helpers
         /// </summary>
         /// <param name="type">The type to get the fields of</param>
         /// <returns>The fields as an array. Returns empty array if there are no fields</returns>
-        public static FieldInfo[] GetAllFields(Type type)
+        public static IEnumerable<FieldInfo> GetAllFields(Type type)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
             //While type is not null
@@ -61,7 +61,7 @@ namespace Helpers
                 type = type.BaseType;
             }
             //Return the fields found
-            return fields.ToArray();
+            return fields;
         }
         /// <summary>
         /// Gets all the fields on a type of the type T
@@ -69,7 +69,7 @@ namespace Helpers
         /// <typeparam name="T">The type of field to look for</typeparam>
         /// <param name="type">object to look for them on</param>
         /// <returns>Returns an array for field info. Will be size 0 if no fields are found</returns>
-        public static FieldInfo[] GetFieldsOfType<T>(Type type)
+        public static IEnumerable<FieldInfo> GetFieldsOfType<T>(Type type)
         {
             List<FieldInfo> fields = new List<FieldInfo>();
             //Get the fields, both public and non public on this instace
@@ -78,8 +78,37 @@ namespace Helpers
             foreach (FieldInfo f in typeFields)
                 if (f.FieldType == typeof(T))
                     fields.Add(f);
-            //Return the array
-            return fields.ToArray();
+            //Return as enumerable to save array allocation. If they really want an array, they can make one themself.
+            return fields;
+        }
+        /// <summary>
+        /// Get all fields that can be serialized on the type
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static IEnumerable<FieldInfo> GetSerializableFields(Type type)
+        {
+            List<FieldInfo> fields = new List<FieldInfo>();
+            FieldInfo[] typeFields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+
+            foreach (FieldInfo field in typeFields)
+            {   // Public
+                if (field.IsPublic)
+                {   // Is serialized
+                    if (!field.Attributes.HasFlag(FieldAttributes.NotSerialized))
+                    fields.Add(field);
+                    continue;
+                }
+                // Private or protected
+                foreach (var attribute in field.CustomAttributes)
+                    if (attribute.AttributeType == typeof(SerializeField))
+                    {   // Is serialized
+                        fields.Add(field);
+                        break;
+                    }
+            }
+            // Return as enumerable to avoid additional memory allocation.
+            return fields;
         }
         /// <summary>
         /// Gets a field by name
@@ -117,8 +146,8 @@ namespace Helpers
             var fromFields = fType.GetFields(flags);
             var toFields = tType.GetFields(flags);
             //Copy fields of matching type & name
-            foreach(FieldInfo field in fromFields)
-                foreach(FieldInfo destinationField in toFields)
+            foreach (FieldInfo field in fromFields)
+                foreach (FieldInfo destinationField in toFields)
                 {   //Incorrect type
                     if (field.FieldType != destinationField.FieldType
                         //Name incorrect
@@ -221,7 +250,7 @@ namespace Helpers
             //Method not found, error
             if (method == null)
                 throw new Exception("Method not found");
-            
+
             return method.Invoke(@object, parameters);
         }
     }
