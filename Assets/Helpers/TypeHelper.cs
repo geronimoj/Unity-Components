@@ -91,6 +91,8 @@ namespace Helpers
             List<FieldInfo> fields = new List<FieldInfo>();
             FieldInfo[] typeFields = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 
+            Type serializeType = typeof(SerializeField);
+
             foreach (FieldInfo field in typeFields)
             {   // Public
                 if (field.IsPublic)
@@ -101,7 +103,7 @@ namespace Helpers
                 }
                 // Private or protected
                 foreach (var attribute in field.CustomAttributes)
-                    if (attribute.AttributeType == typeof(SerializeField))
+                    if (attribute.AttributeType == serializeType)
                     {   // Is serialized
                         fields.Add(field);
                         break;
