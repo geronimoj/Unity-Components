@@ -8,8 +8,12 @@ namespace CustomController
     /// Stores the players capsual collider information with related access and manipulation functions
     /// </summary>
     [System.Serializable]
-    public sealed class CapsualCollider : ColliderInfo
+    public sealed class CapsualCollider : ValidatableCollider<CapsualInfo>
     {
+        /// <summary>
+        /// Temporary collider array used to check if we would overlap with any colliders when validating collision changes
+        /// </summary>
+        private readonly static Collider[] _tempHits = new Collider[2];
         /// <summary>
         /// The collider for this collider :P
         /// </summary>
@@ -58,19 +62,23 @@ namespace CustomController
         /// Sets reference to the transform to the given transform.
         /// </summary>
         /// <param name="t">The transform to be set</param>
-        public override void SetTransform(Transform t)
+        public override void SetOrigin(Transform t)
         {
-            base.SetTransform(t);
-            //Spit out an error if the transform is invalid
-            if (CheckValidTransform())
+            base.SetOrigin(t);
+
+            if (!collider)
             {
                 GameObject col = new GameObject("Collider", new System.Type[] { typeof(CapsuleCollider) });
                 //Get collider and set parent
                 collider = col.GetComponent<CapsuleCollider>();
                 col.transform.parent = origin;
-                //Update the collider
-                UpdateCollider();
+                col.transform.localPosition = Vector3.zero;
+                col.transform.localRotation = Quaternion.identity;
+                col.transform.localScale = Vector3.one;
             }
+            //Update the collider
+            if (Application.isPlaying)
+                UpdateUnityCollider();
         }
         /// <summary>
         /// Gets or Sets the Orientation. If Orientation is zero, -Gravity will be returned instead
@@ -94,7 +102,7 @@ namespace CustomController
             {
                 orientation = value.normalized;
                 //Update the collider. This is necessary since, if lowerHeight + upperHeight are not the same, we are going to have a new position
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -110,7 +118,7 @@ namespace CustomController
             {
                 posOffset = value;
                 //Self explanitory
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
 
@@ -147,10 +155,7 @@ namespace CustomController
         /// <param name="offset">An offset applied to lowerHeight before the point is calculated</param>
         /// <returns>The bottom most point of the capsual</returns>
         public Vector3 GetLowestPoint(float offset)
-        {   //Make sure the transform is valid, otherwise return 0
-            if (CheckValidTransform())
-                return Vector3.zero;
-            //Calculate the location of the lower circle
+        {   //Calculate the location of the lower circle
             return GetOriginPosition() - Orientation * (LowerHeight + offset);
         }
         /// <summary>
@@ -186,10 +191,7 @@ namespace CustomController
         /// <param name="offset">The offset to upperPoint</param>
         /// <returns>The upper most point of the capsual with an offset</returns>
         public Vector3 GetHighestPoint(float offset)
-        {   //Make sure the transform is valid
-            if (CheckValidTransform())
-                return Vector3.zero;
-            //Calculate the point
+        {   //Calculate the point
             return GetOriginPosition() + Orientation * (UpperHeight + offset);
         }
         #endregion
@@ -210,7 +212,7 @@ namespace CustomController
                     value = 0;
                 radius = value;
                 //
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -236,7 +238,7 @@ namespace CustomController
             set
             {
                 upperHeight = value;
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -252,7 +254,7 @@ namespace CustomController
             set
             {
                 lowerHeight = value;
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -274,7 +276,7 @@ namespace CustomController
             set
             {
                 positionOffsetIsGlobal = value;
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -286,7 +288,7 @@ namespace CustomController
             set
             {
                 rotationIsGlobal = value;
-                UpdateCollider();
+                UpdateUnityCollider();
             }
         }
         /// <summary>
@@ -295,9 +297,7 @@ namespace CustomController
         /// </summary>
         /// <returns>Returns the location of the capsual collider</returns>
         public Vector3 GetOriginPosition()
-        {   //Make sure the transform is valid
-            if (CheckValidTransform())
-                return Vector3.zero;
+        {
             if (!positionOffsetIsGlobal)
                 return origin.position + origin.right * posOffset.x + origin.up * posOffset.y + origin.forward * posOffset.z;
             else
@@ -391,20 +391,6 @@ namespace CustomController
                 return Mathf.Sqrt((dot * dot) + (opposite * opposite));
             }
         }
-        /// <summary>
-        /// Updates the location of the Collider in the game scene
-        /// </summary>
-        public void UpdateCollider()
-        {
-            if (!collider)
-                return;
-            //Apply height, offset, rotation & scale.
-            collider.radius = TrueRadius;
-            collider.height = Height;
-            //Get a point from the top of the collider and move it down by half the height
-            collider.transform.position = GetHighestPoint() - Orientation * (Height / 2);
-            collider.transform.rotation = Quaternion.LookRotation(collider.transform.forward, Orientation);
-        }
 
         public override Vector3 GetClosestPoint(Vector3 point, Vector3 normal)
         {   //Make sure lineDir is normalized
@@ -423,10 +409,115 @@ namespace CustomController
             //Move the origin of the collider along orientation by the dot to get the point it would hit
             return GetOriginPosition() + (Orientation * dot) - normal * TrueRadius;
         }
+        /// <summary>
+        /// Updates the location of the Collider in the game scene
+        /// </summary>
+        protected override void UpdateUnityCollider()
+        {
+            if (!collider)
+                return;
+            //Apply height, offset, rotation & scale.
+            collider.radius = TrueRadius;
+            collider.height = Height;
+            //Get a point from the top of the collider and move it down by half the height
+            collider.transform.position = GetHighestPoint() - Orientation * (Height / 2);
+            collider.transform.rotation = Quaternion.LookRotation(collider.transform.forward, Orientation);
+        }
 
+        #region Collider Validation
+        /// <summary>
+        /// Get the current state of the collider
+        /// </summary>
+        /// <returns></returns>
+        public override CapsualInfo GetColliderInfo()
+        {
+            return new CapsualInfo(this);
+        }
+        /// <summary>
+        /// Apply any changes of the info to the collider
+        /// </summary>
+        /// <param name="toCopy"></param>
+        public override void ApplyColliderInfo(CapsualInfo toCopy)
+        {   // Apply changes
+            radius = toCopy.radius;
+            upperHeight = toCopy.upperHeight;
+            lowerHeight = toCopy.lowerHeight;
+            orientation = toCopy.orientation;
+            posOffset = toCopy.positionOffset;
+            // Refresh collider
+            UpdateUnityCollider();
+        }
+
+        public override bool ValidateColliderChanges(CapsualInfo toCompare, bool applyOnSuccess)
+        {
+            CapsualInfo currentState = GetColliderInfo();
+            bool isValid = true;
+            // Check in order of most likely to fail
+            // Radius increased, check if it causes overlap
+            if (isValid && toCompare.radius > radius)
+            {
+                radius = toCompare.radius;
+                isValid = CheckForOverlap();
+            }
+
+            // Upper Height
+            if (isValid && toCompare.upperHeight != upperHeight) // We could do a > check, but if the top is reduced below the current lower height. It would cause this check to fail.
+            {
+                upperHeight = toCompare.upperHeight;
+                isValid = CheckForOverlap();
+            }
+
+            // Lower Heigth
+            if (isValid && toCompare.lowerHeight != lowerHeight)
+            {
+                lowerHeight = toCompare.lowerHeight;
+                isValid = CheckForOverlap();
+            }
+
+            // Orientation
+            if (isValid && toCompare.orientation != orientation)
+            {
+                orientation = toCompare.orientation;
+                isValid = CheckForOverlap();
+            }
+
+            // position offset. Note: checked as a teleport, not as movement
+            if (isValid && toCompare.positionOffset != posOffset)
+            {
+                posOffset = toCompare.positionOffset;
+                isValid = CheckForOverlap();
+            }
+
+            // If valid & we want to apply changes, apply. Otherwise revert as we made changes to the collider to make code more readable.
+            if (isValid && applyOnSuccess)
+                ApplyColliderInfo(toCompare);
+            else
+                ApplyColliderInfo(currentState);
+            // Clear the temp list to avoid holding references to colliders in case this isn't used again so we don't hold references.
+            for (int i = 0; i < _tempHits.Length; i++)
+                _tempHits[i] = null;
+
+            return isValid;
+
+            bool CheckForOverlap()
+            {   // Get any overlapping colliders
+                int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), radius, _tempHits, collisionLayers);
+
+                for (int i = 0; i < hit; i++)
+                {   // If the collider is not our collider, assume we are going to clip into terrain.
+                    if (_tempHits[i] != collider)
+                        return false;
+                }
+
+                return true;
+            }
+        }
+        #endregion
+
+        #region Raycasting
         protected override RaycastHit[] CastAllColliders(Vector3 castVector, Vector3 posOffset, float colliderOffset)
         {   //Perform the raycast
-            RaycastHit[] h = Physics.CapsuleCastAll(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + collisionOffset, castVector.normalized, castVector.magnitude);
+            RaycastHit[] h = Physics.CapsuleCastAll(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + colliderOffset, castVector.normalized, castVector.magnitude, collisionLayers);
             //Sort the hit info by length so that the closest is first
             System.Array.Sort(h, Conditions.CompareDist);
             return h;
@@ -434,16 +525,59 @@ namespace CustomController
 
         protected override RaycastHit CastCollider(Vector3 castVector, Vector3 posOffset, float colliderOffset)
         {
-            Physics.CapsuleCast(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + collisionOffset, castVector.normalized, out RaycastHit h, castVector.magnitude);
+            Physics.CapsuleCast(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + colliderOffset, castVector.normalized, out RaycastHit h, castVector.magnitude, collisionLayers);
             return h;
         }
 
+        protected override int CastAllCollidersNonAlloc(Vector3 castVector, Vector3 posOffset, float colliderOffset, RaycastHit[] raycastHits)
+        {   //Perform the raycast
+            int numOfHits = Physics.CapsuleCastNonAlloc(GetUpperPoint() + posOffset, GetLowerPoint() + posOffset, radius + colliderOffset, castVector.normalized, raycastHits, castVector.magnitude, collisionLayers);
+            //Sort the hit info by length so that the closest is first
+            System.Array.Sort(raycastHits, Conditions.CompareDist);
+            return numOfHits;
+        }
+        #endregion
+
 #if UNITY_EDITOR
-        public override void GizmosDrawCollider()
+        public override void EDITOR_GizmosDrawCollider()
         {
             Gizmos.DrawWireSphere(GetOriginPosition() + Orientation * UpperHeight, Radius);
             Gizmos.DrawWireSphere(GetOriginPosition() - Orientation * LowerHeight, Radius);
         }
 #endif
+    }
+
+    [System.Serializable]
+    public struct CapsualInfo
+    {
+        /// <summary>
+        /// Radius of the capsual
+        /// </summary>
+        public float radius;
+        /// <summary>
+        /// Height the capsual extends above the origin relative to orientation
+        /// </summary>
+        public float upperHeight;
+        /// <summary>
+        /// Height the capsual extends below the origin relative to orientation
+        /// </summary>
+        public float lowerHeight;
+        /// <summary>
+        /// Orientation of the capsual. This is a vector pointing in the up direction of the collider.
+        /// </summary>
+        public Vector3 orientation;
+        /// <summary>
+        /// The position offset of the collider from the origin
+        /// </summary>
+        public Vector3 positionOffset;
+
+        public CapsualInfo(CapsualCollider collider)
+        {
+            radius = collider.Radius;
+            upperHeight = collider.UpperHeight;
+            lowerHeight = collider.LowerHeight;
+            orientation = collider.Orientation;
+            positionOffset = collider.PositionOffset;
+        }
     }
 }

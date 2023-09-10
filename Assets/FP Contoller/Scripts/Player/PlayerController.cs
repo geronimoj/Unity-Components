@@ -274,12 +274,6 @@ public class PlayerController : CustomController.PlayerController
             expectedDir = value.normalized;
         }
     }
-#if UNITY_EDITOR
-    /// <summary>
-    /// Used for debugging information
-    /// </summary>
-    private Vector3 test;
-#endif
     /// <summary>
     /// The previous point the player was standing on the ground. Used for checking if the player should fall off a ledge
     /// </summary>
@@ -703,19 +697,4 @@ public class PlayerController : CustomController.PlayerController
         if (doClamp)
             direction.HozSpeed = Mathf.Clamp(HozSpeed, 0, direction.MaxHozSpeed);
     }
-    #region UNITYEDITOR
-#if UNITY_EDITOR
-    /// <summary>
-    /// Draw debugging information
-    /// </summary>
-    private void OnDrawGizmosSelected()
-    {
-        colInfo.SetTransform(transform);
-        Gizmos.color = Color.green;
-        Gizmos.DrawLine(transform.position, transform.position + test);
-        Gizmos.DrawWireSphere(colInfo.GetUpperPoint() + test, colInfo.Radius);
-        Gizmos.DrawWireSphere(colInfo.GetLowerPoint() + test, colInfo.Radius);
-    }
-#endif
-    #endregion
 }

@@ -40,7 +40,7 @@ public class LedgeMove : State<PlayerController>
             ToggleTransition(typeof(DidJump), true);
             //Make sure there is space above the player if they want to pull up
 
-            if (!ColliderInfo.Cast(ctrl.colInfo, ctrl.CheckDir * (ctrl.colInfo.Radius * 2), Vector3.up * (ctrl.colInfo.Radius + ctrl.colInfo.Height + ctrl.colInfo.CollisionOffset)))
+            if (!CustomCollider.Cast(ctrl.colInfo, ctrl.CheckDir * (ctrl.colInfo.Radius * 2), Vector3.up * (ctrl.colInfo.Radius + ctrl.colInfo.Height + ctrl.colInfo.CollisionOffset)))
                 ToggleTransition(typeof(DoClamberLedge), false);
             else
                 ToggleTransition(typeof(DoClamberLedge), true);

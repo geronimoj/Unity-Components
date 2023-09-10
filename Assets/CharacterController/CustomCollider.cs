@@ -5,12 +5,18 @@ using UnityEngine;
 namespace CustomController
 {
     /// <summary>
-    /// Base class for all colliders
+    /// Collider that contains utility for validating changes to collider before applying & changing collider properties.
     /// </summary>
-    public abstract class ColliderInfo
+    /// <typeparam name="TColliderState"></typeparam>
+    public abstract class CustomCollider
     {
         /// <summary>
-        /// A reference to the players transform
+        /// Layers the collider can collide with
+        /// </summary>
+        [SerializeField]
+        protected LayerMask collisionLayers = int.MaxValue;
+        /// <summary>
+        /// Origin of collider in world
         /// </summary>
         protected Transform origin = null;
         /// <summary>
@@ -34,7 +40,11 @@ namespace CustomController
         /// <summary>
         /// The direction of gravity
         /// </summary>
-        protected Vector3 gravityDir = Vector3.zero;
+        protected Vector3 gravityDir = Physics.gravity;
+        /// <summary>
+        /// Origin of collider in world
+        /// </summary>
+        public Transform Origin => origin;
         /// <summary>
         /// A Get Set for OnGround. When the PlayerController is moved, this value is updated.
         /// </summary>
@@ -62,12 +72,7 @@ namespace CustomController
         /// </summary>
         public Vector3 GravityDirection
         {
-            get
-            {   //If gravityDir is 0 or unassigned return(0, -1, 0)
-                if (gravityDir == Vector3.zero)
-                    GravityDirection = Physics.gravity;
-                return gravityDir;
-            }
+            get => gravityDir;
             set
             {
                 gravityDir = value.normalized;
@@ -92,30 +97,19 @@ namespace CustomController
                 collisionOffset = value;
             }
         }
+
         /// <summary>
         /// Sets reference to the transform to the given transform.
         /// </summary>
         /// <param name="t">The transform to be set</param>
-        public virtual void SetTransform(Transform t)
+        public virtual void SetOrigin(Transform t)
         {
             origin = t;
-            //Spit out an error if the transform is invalid
-            CheckValidTransform();
         }
         /// <summary>
-        /// Checks if the transform locally stored is valid
+        /// Update the Unity Collider to match this
         /// </summary>
-        /// <returns>Returns true if this transform is invalid</returns>
-        protected bool CheckValidTransform()
-        {   //If origin is null, report and error and break
-            if (origin == null)
-            {
-                Debug.LogError("Transform not assigned to collider info");
-                Debug.Break();
-                return true;
-            }
-            return false;
-        }
+        protected abstract void UpdateUnityCollider();
         /// <summary>
         /// Determines if a slope given by a normal can be stood on or is too steep
         /// </summary>
@@ -142,13 +136,15 @@ namespace CustomController
         public abstract Vector3 GetLowestPoint();
 
         #region Raycasting
+
+        #region Single Casts
         /// <summary>
         /// Performs a capsual cast using the given colliderInfo
         /// </summary>
         /// <param name="c">The collider to cast</param>
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool Cast(ColliderInfo c, Vector3 castVec)
+        public static bool Cast(CustomCollider c, Vector3 castVec)
         {
             return Cast(c, castVec, Vector3.zero, out _);
         }
@@ -159,7 +155,7 @@ namespace CustomController
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <param name="offset">The offset from the origin the cast should take place</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool Cast(ColliderInfo c, Vector3 castVec, Vector3 offset)
+        public static bool Cast(CustomCollider c, Vector3 castVec, Vector3 offset)
         {
             return Cast(c, castVec, offset, out _);
         }
@@ -170,7 +166,7 @@ namespace CustomController
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <param name="hit">Infromation about the object that was hit</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool Cast(ColliderInfo c, Vector3 castVec, out RaycastHit hit)
+        public static bool Cast(CustomCollider c, Vector3 castVec, out RaycastHit hit)
         {
             return Cast(c, castVec, Vector3.zero, out hit);
         }
@@ -182,7 +178,7 @@ namespace CustomController
         /// <param name="offset">The offset from origin the cast should take place</param>
         /// <param name="hit">Information about the object that was hit</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool Cast(ColliderInfo c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
+        public static bool Cast(CustomCollider c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
         {   //Perform the raycast and get the results
             hit = c.CastCollider(castVec, offset, 0);
             return hit.distance != 0;
@@ -193,7 +189,7 @@ namespace CustomController
         /// <param name="c">The collider to cast</param>
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool CastWithOffset(ColliderInfo c, Vector3 castVec)
+        public static bool CastWithOffset(CustomCollider c, Vector3 castVec)
         {
             return CastWithOffset(c, castVec, Vector3.zero, out _);
         }
@@ -203,7 +199,7 @@ namespace CustomController
         /// <param name="c">The collider to cast</param>
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <param name="offset">The offset from the origin the cast should take place</param>
-        public static bool CastWithOffset(ColliderInfo c, Vector3 castVec, Vector3 offset)
+        public static bool CastWithOffset(CustomCollider c, Vector3 castVec, Vector3 offset)
         {
             return CastWithOffset(c, castVec, offset, out _);
         }
@@ -214,7 +210,7 @@ namespace CustomController
         /// <param name="castVec">The direction and distance to cast the collider</param>
         /// <param name="hit">Infromation about the object that was hit</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool CastWithOffset(ColliderInfo c, Vector3 castVec, out RaycastHit hit)
+        public static bool CastWithOffset(CustomCollider c, Vector3 castVec, out RaycastHit hit)
         {
             return CastWithOffset(c, castVec, Vector3.zero, out hit);
         }
@@ -226,19 +222,22 @@ namespace CustomController
         /// <param name="offset">The offset from origin the cast should take place</param>
         /// <param name="hit">Information about the object that was hit</param>
         /// <returns>Returns true if something was hit</returns>
-        public static bool CastWithOffset(ColliderInfo c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
+        public static bool CastWithOffset(CustomCollider c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
         {   //Perform the raycast
             hit = c.CastCollider(castVec, offset, c.CollisionOffset);
             //Return false if none of the hit results were valid
             return hit.distance != 0;
         }
+        #endregion
+
+        #region All Casts
         /// <summary>
         /// Performs a cast and returns infromation about everything hit
         /// </summary>
         /// <param name="c">The colliderInfo to cast</param>
         /// <param name="castVec">The distance and direction of the cast</param>
         /// <returns>Information about everything hit</returns>
-        public static RaycastHit[] CastAll(ColliderInfo c, Vector3 castVec)
+        public static RaycastHit[] CastAll(CustomCollider c, Vector3 castVec)
         {
             return CastAll(c, castVec, Vector3.zero);
         }
@@ -249,7 +248,7 @@ namespace CustomController
         /// <param name="castVec">The direction and distance of the cast</param>
         /// <param name="offset">The positional offset of the cast</param>
         /// <returns>Hit information about everything that was hit</returns>
-        public static RaycastHit[] CastAll(ColliderInfo c, Vector3 castVec, Vector3 offset)
+        public static RaycastHit[] CastAll(CustomCollider c, Vector3 castVec, Vector3 offset)
         {
             return c.CastAllColliders(castVec, offset, 0);
         }
@@ -259,7 +258,7 @@ namespace CustomController
         /// <param name="c">The colliderInfo to cast</param>
         /// <param name="castVec">The distance and direction of the cast</param>
         /// <returns>Information about everything hit</returns>
-        public static RaycastHit[] CastAllWithOffset(ColliderInfo c, Vector3 castVec)
+        public static RaycastHit[] CastAllWithOffset(CustomCollider c, Vector3 castVec)
         {
             return CastAllWithOffset(c, castVec, Vector3.zero);
         }
@@ -270,10 +269,58 @@ namespace CustomController
         /// <param name="castVec">The direction and distance of the cast</param>
         /// <param name="offset">The positional offset of the cast</param>
         /// <returns>Hit information about everything that was hit</returns>
-        public static RaycastHit[] CastAllWithOffset(ColliderInfo c, Vector3 castVec, Vector3 offset)
+        public static RaycastHit[] CastAllWithOffset(CustomCollider c, Vector3 castVec, Vector3 offset)
         {
             return c.CastAllColliders(castVec, offset, c.CollisionOffset);
         }
+        #endregion
+
+        #region Non Alloc Casts
+        /// <summary>
+        /// Performs a cast and returns infromation about everything hit
+        /// </summary>
+        /// <param name="c">The colliderInfo to cast</param>
+        /// <param name="castVec">The distance and direction of the cast</param>
+        /// <returns>Information about everything hit</returns>
+        public static int CastAllNonAlloc(CustomCollider c, Vector3 castVec, RaycastHit[] hits)
+        {
+            return CastAllNonAlloc(c, castVec, Vector3.zero, hits);
+        }
+        /// <summary>
+        /// Performs a cast and return everything that was hit
+        /// </summary>
+        /// <param name="c">The collider info to cast</param>
+        /// <param name="castVec">The direction and distance of the cast</param>
+        /// <param name="offset">The positional offset of the cast</param>
+        /// <returns>Hit information about everything that was hit</returns>
+        public static int CastAllNonAlloc(CustomCollider c, Vector3 castVec, Vector3 offset, RaycastHit[] hits)
+        {
+            return c.CastAllCollidersNonAlloc(castVec, offset, 0, hits);
+        }
+        /// <summary>
+        /// Performs a cast with collisionOffset and returns infromation about everything hit
+        /// </summary>
+        /// <param name="c">The colliderInfo to cast</param>
+        /// <param name="castVec">The distance and direction of the cast</param>
+        /// <returns>Information about everything hit</returns>
+        public static int CastAllWithOffsetNonAlloc(CustomCollider c, Vector3 castVec, RaycastHit[] hits)
+        {
+            return CastAllWithOffsetNonAlloc(c, castVec, Vector3.zero, hits);
+        }
+        /// <summary>
+        /// Performs a cast with collisionOffset and return everything that was hit
+        /// </summary>
+        /// <param name="c">The collider info to cast</param>
+        /// <param name="castVec">The direction and distance of the cast</param>
+        /// <param name="offset">The positional offset of the cast</param>
+        /// <returns>Hit information about everything that was hit</returns>
+        public static int CastAllWithOffsetNonAlloc(CustomCollider c, Vector3 castVec, Vector3 offset, RaycastHit[] hits)
+        {
+            return c.CastAllCollidersNonAlloc(castVec, offset, c.CollisionOffset, hits);
+        }
+        #endregion
+
+        #region Abstract
         /// <summary>
         /// Raycasts the collider along castVector and returns all colliders hit. Results will be stored by distance afterwards
         /// </summary>
@@ -285,6 +332,17 @@ namespace CustomController
         /// normally and a second time with the collisionOffset applied (colliderOffset).</remarks>
         protected abstract RaycastHit[] CastAllColliders(Vector3 castVector, Vector3 posOffset, float colliderOffset);
         /// <summary>
+        /// Raycasts the collider along castVector and returns all colliders hit. Results will be stored by distance afterwards. Avoids memory allocation.
+        /// </summary>
+        /// <param name="castVector">The direction and distance to raycast the collider</param>
+        /// <param name="posOffset">The offset from the colliders current position in world position</param>
+        /// <param name="colliderOffset">A size increase to the collider. Imagine extruding every face of the collider out by this amount before raycasting</param>
+        /// <param name="raycastHits">Maxiumum number of hits to avoid allocation</param>
+        /// <returns>Returns the raycastHit information of all colliders hit</returns>
+        /// <remarks>This is primarily used when projecting the collider for movement. When projecting, the collider is projected twice. Once
+        /// normally and a second time with the collisionOffset applied (colliderOffset).</remarks>
+        protected abstract int CastAllCollidersNonAlloc(Vector3 castVector, Vector3 posOffset, float colliderOffset, RaycastHit[] raycastHits);
+        /// <summary>
         /// Raycasts the collider along castVector and returns the first collider hit.
         /// </summary>
         /// <param name="castVector">The direction and distance to raycast the collider</param>
@@ -294,11 +352,40 @@ namespace CustomController
         protected abstract RaycastHit CastCollider(Vector3 castVector, Vector3 posOffset, float colliderOffset);
         #endregion
 
+        #endregion
+
 #if UNITY_EDITOR
+        public void EDITOR_SetOrigin(Transform t)
+        {
+            origin = t;
+        }
         /// <summary>
         /// Draws the collider in gizmos. Note: This is editor only
         /// </summary>
-        public abstract void GizmosDrawCollider();
+        public virtual void EDITOR_GizmosDrawCollider() { }
 #endif
+    }
+
+    public abstract class ValidatableCollider<TColliderInfo> : CustomCollider
+    {
+        #region Collider Changing
+        /// <summary>
+        /// Get the data that defines the colliders current shape
+        /// </summary>
+        /// <returns>Object containing the current collider state</returns>
+        public abstract TColliderInfo GetColliderInfo();
+        /// <summary>
+        /// Update this collider to be identical to another collider
+        /// </summary>
+        /// <param name="colliderData">The data to copy from</param>
+        public abstract void ApplyColliderInfo(TColliderInfo toCopy);
+        /// <summary>
+        /// Compares the colliders current state to the provided state, checking if the collider changes could be made without intersecting without intersecting with geometry
+        /// </summary>
+        /// <param name="toCompare">The collider to simulate changing into</param>
+        /// <param name="applyOnSuccess">Apples the target collider info if changes can be made without intersecting with geometry</param>
+        /// <returns>True if the changes can be made without intersecting with geometry. False otherwise.</returns>
+        public abstract bool ValidateColliderChanges(TColliderInfo toCompare, bool applyOnSuccess);
+        #endregion
     }
 }

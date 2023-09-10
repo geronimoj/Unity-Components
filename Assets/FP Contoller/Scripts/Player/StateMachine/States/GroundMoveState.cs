@@ -110,7 +110,7 @@ public class GroundMoveState : State<PlayerController>
         //Calculate the movement vector
         moveVec = ctrl.TotalVector * Time.deltaTime;
         //Check if we should move the player up or down the surface.
-        if (ColliderInfo.CastWithOffset(ctrl.colInfo, Vector3.down * (ctrl.StepHeight * 2), Vector3.up * ctrl.StepHeight + moveVec, out RaycastHit hit) && ctrl.colInfo.ValidSlope(hit.normal))
+        if (CustomCollider.CastWithOffset(ctrl.colInfo, Vector3.down * (ctrl.StepHeight * 2), Vector3.up * ctrl.StepHeight + moveVec, out RaycastHit hit) && ctrl.colInfo.ValidSlope(hit.normal))
             moveVec.y = (hit.point + hit.normal * (ctrl.colInfo.Radius + ctrl.colInfo.CollisionOffset)).y - ctrl.colInfo.GetLowerPoint().y;
 
         //Move the character

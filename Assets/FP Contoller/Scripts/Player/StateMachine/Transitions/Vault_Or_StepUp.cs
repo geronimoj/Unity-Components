@@ -65,7 +65,7 @@ public class Vault_Or_StepUp : If_ElseIfTransition<PlayerController>
         castOffset.z = 0;
 
         //Perform a capsual cast assuming the player's normal hitbox.
-        if (!ColliderInfo.CastWithOffset(c.colInfo, c.direction.HozDirection * (c.openSpaceRequired + distanceToObstacle), castOffset))
+        if (!CustomCollider.CastWithOffset(c.colInfo, c.direction.HozDirection * (c.openSpaceRequired + distanceToObstacle), castOffset))
         {
             //Since we are swapping into the Step Up, we need to set the position offset of the collider here since we won't know about it later.
             c.colInfo.PositionOffset = castOffset;
