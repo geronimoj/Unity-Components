@@ -13,7 +13,7 @@ namespace CustomController
         /// <summary>
         /// Temporary collider array used to check if we would overlap with any colliders when validating collision changes
         /// </summary>
-        private readonly static Collider[] _tempHits = new Collider[2];
+        private readonly static Collider[] _tempHits = new Collider[2]; // Size 2 - 1 for our collider, 1 for any other colliders
         /// <summary>
         /// The collider for this collider :P
         /// </summary>
@@ -420,8 +420,9 @@ namespace CustomController
             collider.radius = TrueRadius;
             collider.height = Height;
             //Get a point from the top of the collider and move it down by half the height
-            collider.transform.position = GetHighestPoint() - Orientation * (Height / 2);
-            collider.transform.rotation = Quaternion.LookRotation(collider.transform.forward, Orientation);
+            collider.transform.SetPositionAndRotation(
+                GetHighestPoint() - Orientation * (Height / 2), 
+                Quaternion.LookRotation(collider.transform.forward, Orientation));
         }
 
         #region Collider Validation
@@ -457,14 +458,17 @@ namespace CustomController
                 UpdateUnityCollider();
         }
 
-        public override bool ValidateColliderChanges(CapsualInfo toCompare, bool applyOnSuccess)
+        public override bool ValidateColliderChanges(CapsualInfo toCompare, bool applyOnSuccess, out int failReason)
         {
             CapsualInfo currentState = GetColliderInfo();
             bool isValid = true;
-            // Check in order of most likely to fail
-            // Radius increased, check if it causes overlap
+            failReason = (int)CapsualValidateFailReason.NoChange;
+            // Check in order of most likely to fail. We do each check individually in case, in future, we want to be able to check
+            // what part of it failed.
+            // Radius increased. If its a decrease, it literally can't overlap with anything
             if (isValid && toCompare.radius > radius)
             {
+                failReason = (int)CapsualValidateFailReason.Radius;
                 radius = toCompare.radius;
                 isValid = CheckForOverlap();
             }
@@ -472,6 +476,7 @@ namespace CustomController
             // Upper Height
             if (isValid && toCompare.upperHeight != upperHeight) // We could do a > check, but if the top is reduced below the current lower height. It would cause this check to fail.
             {
+                failReason = (int)CapsualValidateFailReason.UpperHeight;
                 upperHeight = toCompare.upperHeight;
                 isValid = CheckForOverlap();
             }
@@ -479,6 +484,7 @@ namespace CustomController
             // Lower Heigth
             if (isValid && toCompare.lowerHeight != lowerHeight)
             {
+                failReason = (int)CapsualValidateFailReason.LowerHeight;
                 lowerHeight = toCompare.lowerHeight;
                 isValid = CheckForOverlap();
             }
@@ -486,6 +492,7 @@ namespace CustomController
             // Orientation
             if (isValid && toCompare.orientation != orientation)
             {
+                failReason = (int)CapsualValidateFailReason.Orientation;
                 orientation = toCompare.orientation;
                 isValid = CheckForOverlap();
             }
@@ -493,13 +500,14 @@ namespace CustomController
             // position offset. Note: checked as a teleport, not as movement
             if (isValid && toCompare.positionOffset != posOffset)
             {
+                failReason = (int)CapsualValidateFailReason.PositionOffset;
                 posOffset = toCompare.positionOffset;
                 isValid = CheckForOverlap();
             }
 
             // If valid & we want to apply changes, apply. Otherwise revert as we made changes to the collider to make code more readable.
             if (isValid && applyOnSuccess)
-                ApplyColliderInfo(toCompare, true);
+                ApplyColliderInfo(toCompare, failReason != 0); // If failReason is 0, the collider didn't change
             else
                 ApplyColliderInfo(currentState, false); // Don't need to update unity collider as it should not change
             // Clear the temp list to avoid holding references to colliders in case this isn't used again so we don't hold references.
@@ -508,6 +516,8 @@ namespace CustomController
 
             return isValid;
 
+            // Performs an overlap check. If a collider that isn't ours is found, returns false. Otherwise returns true. (Opposite of what you would expect)
+            // this is so that is lines up with the isValid boolean to avoid having to invert the results afterwards.
             bool CheckForOverlap()
             {   // Get any overlapping colliders
                 int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius, _tempHits, collisionLayers);
@@ -555,7 +565,9 @@ namespace CustomController
         }
 #endif
     }
-
+    /// <summary>
+    /// Contains information about a CapsualColliders state. Useful for storing collider modifications, such as crouching & standing.
+    /// </summary>
     [System.Serializable]
     public struct CapsualInfo
     {
@@ -588,5 +600,17 @@ namespace CustomController
             orientation = collider.Orientation;
             positionOffset = collider.PositionOffset;
         }
+    }
+    /// <summary>
+    /// Which part of the collider validation failed.
+    /// </summary>
+    public enum CapsualValidateFailReason
+    {
+        NoChange = 0,
+        Radius = 1,
+        UpperHeight = 2,
+        LowerHeight = 3,
+        Orientation = 4,
+        PositionOffset = 5
     }
 }

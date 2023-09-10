@@ -384,8 +384,9 @@ namespace CustomController
         /// </summary>
         /// <param name="toCompare">The collider to simulate changing into</param>
         /// <param name="applyOnSuccess">Apples the target collider info if changes can be made without intersecting with geometry</param>
+        /// <param name="failReason">Reason the collider failed to be changed</param>
         /// <returns>True if the changes can be made without intersecting with geometry. False otherwise.</returns>
-        public abstract bool ValidateColliderChanges(TColliderInfo toCompare, bool applyOnSuccess);
+        public abstract bool ValidateColliderChanges(TColliderInfo toCompare, bool applyOnSuccess, out int failReason);
         #endregion
     }
 }
