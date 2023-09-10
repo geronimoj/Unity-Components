@@ -412,7 +412,7 @@ namespace CustomController
         /// <summary>
         /// Updates the location of the Collider in the game scene
         /// </summary>
-        protected override void UpdateUnityCollider()
+        public override void UpdateUnityCollider()
         {
             if (!collider)
                 return;
@@ -438,6 +438,14 @@ namespace CustomController
         /// </summary>
         /// <param name="toCopy"></param>
         public override void ApplyColliderInfo(CapsualInfo toCopy)
+        {
+            ApplyColliderInfo(toCopy, true);
+        }
+
+        /// <summary>
+        /// Apply any changes of the info to the collider
+        /// </summary>
+        void ApplyColliderInfo(CapsualInfo toCopy, bool updateUnityCollider)
         {   // Apply changes
             radius = toCopy.radius;
             upperHeight = toCopy.upperHeight;
@@ -445,7 +453,8 @@ namespace CustomController
             orientation = toCopy.orientation;
             posOffset = toCopy.positionOffset;
             // Refresh collider
-            UpdateUnityCollider();
+            if (updateUnityCollider)
+                UpdateUnityCollider();
         }
 
         public override bool ValidateColliderChanges(CapsualInfo toCompare, bool applyOnSuccess)
@@ -490,9 +499,9 @@ namespace CustomController
 
             // If valid & we want to apply changes, apply. Otherwise revert as we made changes to the collider to make code more readable.
             if (isValid && applyOnSuccess)
-                ApplyColliderInfo(toCompare);
+                ApplyColliderInfo(toCompare, true);
             else
-                ApplyColliderInfo(currentState);
+                ApplyColliderInfo(currentState, false); // Don't need to update unity collider as it should not change
             // Clear the temp list to avoid holding references to colliders in case this isn't used again so we don't hold references.
             for (int i = 0; i < _tempHits.Length; i++)
                 _tempHits[i] = null;
@@ -501,7 +510,7 @@ namespace CustomController
 
             bool CheckForOverlap()
             {   // Get any overlapping colliders
-                int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), radius, _tempHits, collisionLayers);
+                int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius, _tempHits, collisionLayers);
 
                 for (int i = 0; i < hit; i++)
                 {   // If the collider is not our collider, assume we are going to clip into terrain.

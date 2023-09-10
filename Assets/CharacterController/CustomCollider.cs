@@ -107,9 +107,9 @@ namespace CustomController
             origin = t;
         }
         /// <summary>
-        /// Update the Unity Collider to match this
+        /// Update the Unity Collider to match its current state
         /// </summary>
-        protected abstract void UpdateUnityCollider();
+        public abstract void UpdateUnityCollider();
         /// <summary>
         /// Determines if a slope given by a normal can be stood on or is too steep
         /// </summary>
