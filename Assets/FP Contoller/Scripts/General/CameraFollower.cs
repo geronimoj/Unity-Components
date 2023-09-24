@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Sets the position and rotation of this gameObject to be identical to the target
 /// </summary>
+[DefaultExecutionOrder(10000)] // Execute last so that camera accounts for any geometry intersection fixes
 public class CameraFollower : MonoBehaviour
 {
     /// <summary>
@@ -22,7 +23,7 @@ public class CameraFollower : MonoBehaviour
     /// <summary>
     /// Sets the position and rotation of this GameObject to be the same as target
     /// </summary>
-    void Update()
+    void LateUpdate()
     {   //Make sure we have a target
         if (target == null)
             return;

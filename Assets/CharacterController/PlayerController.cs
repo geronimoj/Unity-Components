@@ -263,7 +263,10 @@ namespace CustomController
         }
 #endif
         private void RespondToIntersectingColliders()
-        {
+        {   // Ensure transform changes are applied to physics. Otherwise you can get clipping for 1 or 2 frames as the Physics system hasn't caught up.
+            // This smooths out that stuff
+            Physics.SyncTransforms();
+
             IEnumerable<Collider> customColliderParts = colInfo.GetColliders();
             Collider[] intersectingColliders = colInfo.GetOverlappingColliders();
 

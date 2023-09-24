@@ -17,7 +17,7 @@ namespace CustomController
         /// This resolves issues where moving perfectly against a surface would result in the outer
         /// collider registering as inside of the collider, instead of touching.
         /// </remarks>
-        protected const float TINY_DEDUCTION = 1e-5f;
+        public const float TINY_DEDUCTION = 1e-5f;
 
         /// <summary>
         /// Layers the collider can collide with
