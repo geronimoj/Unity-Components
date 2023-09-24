@@ -201,7 +201,7 @@ namespace CustomController
         /// </summary>
         /// <param name="dir">The direction with a magnitude of distance the player should be moved</param>
         /// <param name="cancelOnFail">If true, the player will not be moved if dir is changed</param>
-        [Obsolete("Use Move instead. Because this, infact, does not teleport you...")]
+        [Obsolete("Use Move() instead. Same parameters, better naming conventions")]
         public void MoveTo(Vector3 dir, bool cancelOnFail = false) => Move(dir, cancelOnFail);
         /// <summary>
         /// Performs the raycasts to detect collisions for MoveTo
@@ -241,12 +241,15 @@ namespace CustomController
                     _temporary.Enqueue(h);
             }
         }
-#if PLAYERCONTROLLER_MOVING_PLATFORMS
         private void LateUpdate()
         {
+#if PLAYERCONTROLLER_MOVING_PLATFORMS
             CheckFloorHasMoved();
+#endif
+            RespondToIntersectingColliders();
         }
 
+#if PLAYERCONTROLLER_MOVING_PLATFORMS
         private void CheckFloorHasMoved()
         {   //Is there a floor we are on
             if (!_standingOn)
@@ -259,6 +262,37 @@ namespace CustomController
                 Move(posDif);
         }
 #endif
+        private void RespondToIntersectingColliders()
+        {
+            IEnumerable<Collider> customColliderParts = colInfo.GetColliders();
+            Collider[] intersectingColliders = colInfo.GetOverlappingColliders();
+
+            for (int i = 0; i < intersectingColliders.Length; i++)
+            {
+                Collider col = intersectingColliders[i];
+                // Skip null colliders. Could possibly just break instead.
+                if (!col)
+                    continue;
+
+                // Check each collider for overlap
+                foreach(Collider customColliderPart in customColliderParts)
+                {
+                    Transform colTrans = customColliderPart.transform;
+                    Transform interTrans = col.transform;
+                    // Check for overlap
+                    if (!Physics.ComputePenetration(customColliderPart, colTrans.position, colTrans.rotation,
+                        col, interTrans.position, interTrans.rotation,
+                        out Vector3 moveDir, out float distance))
+                    {
+                        // Overlap found! Move the player.
+                        // Apply movement on a per collider basis, as custom colliders built from multiple colliders
+                        // may have multiple colliders intersecting. This may result in the player being pushed further
+                        // away from the wall that necessary.
+                        Move(moveDir * distance);
+                    }
+                }
+            }
+        }
 
         #region UNITYEDITOR
 #if UNITY_EDITOR
@@ -275,6 +309,6 @@ namespace CustomController
             Gizmos.DrawLine(transform.position, transform.position + _moveVec);
         }
 #endif
-        #endregion
+#endregion
     }
 }

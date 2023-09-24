@@ -134,6 +134,16 @@ namespace CustomController
         /// </summary>
         /// <returns>The lowest point on the collider</returns>
         public abstract Vector3 GetLowestPoint();
+        /// <summary>
+        /// Get the colliders that make up this custom colliders.
+        /// </summary>
+        /// <returns>Enumerable collection of colliders</returns>
+        public abstract IEnumerable<Collider> GetColliders();
+        /// <summary>
+        /// Obtain any overlapping colliders
+        /// </summary>
+        /// <returns>A temporary array containing any overlapping colliders</returns>
+        public abstract Collider[] GetOverlappingColliders();
 
         #region Raycasting
 

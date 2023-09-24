@@ -13,11 +13,12 @@ namespace CustomController
         /// <summary>
         /// Temporary collider array used to check if we would overlap with any colliders when validating collision changes
         /// </summary>
-        private readonly static Collider[] _tempHits = new Collider[2]; // Size 2 - 1 for our collider, 1 for any other colliders
+        private readonly static Collider[] _tempHits = new Collider[10]; // Size 2 - 1 for our collider, 1 for any other colliders
         /// <summary>
         /// The collider for this collider :P
         /// </summary>
         private CapsuleCollider collider;
+        private Collider[] enumerableCollider = null;
         /// <summary>
         /// The radius of the capsual
         /// </summary>
@@ -75,6 +76,8 @@ namespace CustomController
                 col.transform.localPosition = Vector3.zero;
                 col.transform.localRotation = Quaternion.identity;
                 col.transform.localScale = Vector3.one;
+
+                enumerableCollider = new Collider[] { collider };
             }
             //Update the collider
             if (Application.isPlaying)
@@ -511,25 +514,30 @@ namespace CustomController
             else
                 ApplyColliderInfo(currentState, false); // Don't need to update unity collider as it should not change
             // Clear the temp list to avoid holding references to colliders in case this isn't used again so we don't hold references.
-            for (int i = 0; i < _tempHits.Length; i++)
-                _tempHits[i] = null;
+            ClearTempHits();
 
             return isValid;
+        }
+        /// <summary>
+        /// Fills _tempHits with colliders
+        /// </summary>
+        /// <returns></returns>
+        bool CheckForOverlap()
+        {   // Get any overlapping colliders
+            int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius, _tempHits, collisionLayers);
 
-            // Performs an overlap check. If a collider that isn't ours is found, returns false. Otherwise returns true. (Opposite of what you would expect)
-            // this is so that is lines up with the isValid boolean to avoid having to invert the results afterwards.
-            bool CheckForOverlap()
-            {   // Get any overlapping colliders
-                int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius, _tempHits, collisionLayers);
-
-                for (int i = 0; i < hit; i++)
-                {   // If the collider is not our collider, assume we are going to clip into terrain.
-                    if (_tempHits[i] != collider)
-                        return false;
-                }
-
-                return true;
+            for (int i = 0; i < hit; i++)
+            {   // If the collider is not our collider, assume we are going to clip into terrain.
+                if (_tempHits[i] != collider)
+                    return false;
             }
+
+            return true;
+        }
+        void ClearTempHits()
+        {   // Clear the temp list to avoid holding references to colliders in case this isn't used again so we don't hold references.
+            for (int i = 0; i < _tempHits.Length; i++)
+                _tempHits[i] = null;
         }
         #endregion
 
@@ -556,6 +564,15 @@ namespace CustomController
             return numOfHits;
         }
         #endregion
+
+        public override Collider[] GetOverlappingColliders()
+        {   // Ensure no colliders in temp hit
+            ClearTempHits();
+            CheckForOverlap();
+            return _tempHits;
+        }
+
+        public override IEnumerable<Collider> GetColliders() => enumerableCollider;
 
 #if UNITY_EDITOR
         public override void EDITOR_GizmosDrawCollider()
