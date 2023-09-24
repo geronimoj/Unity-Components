@@ -220,24 +220,24 @@ namespace CustomController
             offsetIndex = 0;
             _temporary.Clear();
             // Queue up raycast hit info.
-            for (int i = 0; i < numHitWithOffset; i++)
+            for (int i = 0; i < withOffsetHits.Length; i++)
             {
                 RaycastHit h = withOffsetHits[i];
                 withOffsetHits[i] = default; // Clear to avoid holding reference
 
-                if (!collidersToIgnore.Contains(h.collider))
+                if (h.collider && !collidersToIgnore.Contains(h.collider))
                 {
                     _temporary.Enqueue(h);
                     offsetIndex++;
                 }
             }
 
-            for (int i = 0; i < numHit; i++)
+            for (int i = 0; i < noOffsetHits.Length; i++)
             {
                 RaycastHit h = noOffsetHits[i];
                 noOffsetHits[i] = default; // Clear to avoid holding reference
                 //Make sure hit colliders are not to be ignored
-                if (!collidersToIgnore.Contains(h.collider))
+                if (h.collider && !collidersToIgnore.Contains(h.collider))
                     _temporary.Enqueue(h);
             }
         }
@@ -271,7 +271,7 @@ namespace CustomController
             {
                 Collider col = intersectingColliders[i];
                 // Skip null colliders. Could possibly just break instead.
-                if (!col)
+                if (!col || collidersToIgnore.Contains(col))
                     continue;
 
                 // Check each collider for overlap
@@ -279,16 +279,18 @@ namespace CustomController
                 {
                     Transform colTrans = customColliderPart.transform;
                     Transform interTrans = col.transform;
-                    // Check for overlap
-                    if (!Physics.ComputePenetration(customColliderPart, colTrans.position, colTrans.rotation,
+
+                    bool penetrating = Physics.ComputePenetration(customColliderPart, colTrans.position, colTrans.rotation,
                         col, interTrans.position, interTrans.rotation,
-                        out Vector3 moveDir, out float distance))
+                        out Vector3 moveDir, out float distance);
+                    // Check for overlap
+                    if (penetrating)
                     {
                         // Overlap found! Move the player.
                         // Apply movement on a per collider basis, as custom colliders built from multiple colliders
                         // may have multiple colliders intersecting. This may result in the player being pushed further
                         // away from the wall that necessary.
-                        Move(moveDir * distance);
+                        Move(moveDir.normalized * distance);
                     }
                 }
             }

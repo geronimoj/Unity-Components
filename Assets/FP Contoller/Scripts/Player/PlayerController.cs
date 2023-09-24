@@ -150,6 +150,8 @@ public class PlayerController : CustomController.PlayerController
             return minTurnTime;
         }
     }
+
+    [NonSerialized] public float xEulerRotation = 0f;
     #endregion
     /// <summary>
     /// The time between button presses in which the player will not slow down
@@ -604,7 +606,7 @@ public class PlayerController : CustomController.PlayerController
         Vector3 rotation = transform.eulerAngles;
         //Still need to clamp the cameras rotation
         float xChange = -InputManager.GetInput("Mouse Y") * (sensitivity * yFactor) * Time.deltaTime;
-        float x = (transform.eulerAngles.x) + xChange;
+        float x = xEulerRotation + xChange;
         x -= 80;
         if (x < 180 && x > 0)
             x = 0;
@@ -613,7 +615,7 @@ public class PlayerController : CustomController.PlayerController
             x += 360;
         x = Mathf.Clamp(x, 200, 360);
         x += 80;
-        rotation.x = x;
+        xEulerRotation = x;
 
         rotation.y += InputManager.GetInput("Mouse X") * (sensitivity * xFactor) * Time.deltaTime;
         rotation.y %= 360;

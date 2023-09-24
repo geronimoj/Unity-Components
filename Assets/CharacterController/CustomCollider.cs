@@ -11,6 +11,15 @@ namespace CustomController
     public abstract class CustomCollider
     {
         /// <summary>
+        /// Small deduction taken away from Collision Offset when raycasting.
+        /// </summary>
+        /// <remarks>
+        /// This resolves issues where moving perfectly against a surface would result in the outer
+        /// collider registering as inside of the collider, instead of touching.
+        /// </remarks>
+        protected const float TINY_DEDUCTION = 1e-5f;
+
+        /// <summary>
         /// Layers the collider can collide with
         /// </summary>
         [SerializeField]
@@ -40,7 +49,7 @@ namespace CustomController
         /// <summary>
         /// The direction of gravity
         /// </summary>
-        protected Vector3 gravityDir = Physics.gravity;
+        protected Vector3 gravityDir = Physics.gravity.normalized;
         /// <summary>
         /// Origin of collider in world
         /// </summary>
@@ -234,7 +243,7 @@ namespace CustomController
         /// <returns>Returns true if something was hit</returns>
         public static bool CastWithOffset(CustomCollider c, Vector3 castVec, Vector3 offset, out RaycastHit hit)
         {   //Perform the raycast
-            hit = c.CastCollider(castVec, offset, c.CollisionOffset);
+            hit = c.CastCollider(castVec, offset, c.CollisionOffset - TINY_DEDUCTION);
             //Return false if none of the hit results were valid
             return hit.distance != 0;
         }
@@ -281,7 +290,7 @@ namespace CustomController
         /// <returns>Hit information about everything that was hit</returns>
         public static RaycastHit[] CastAllWithOffset(CustomCollider c, Vector3 castVec, Vector3 offset)
         {
-            return c.CastAllColliders(castVec, offset, c.CollisionOffset);
+            return c.CastAllColliders(castVec, offset, c.CollisionOffset - TINY_DEDUCTION);
         }
         #endregion
 
@@ -326,7 +335,7 @@ namespace CustomController
         /// <returns>Hit information about everything that was hit</returns>
         public static int CastAllWithOffsetNonAlloc(CustomCollider c, Vector3 castVec, Vector3 offset, RaycastHit[] hits)
         {
-            return c.CastAllCollidersNonAlloc(castVec, offset, c.CollisionOffset, hits);
+            return c.CastAllCollidersNonAlloc(castVec, offset, c.CollisionOffset - TINY_DEDUCTION, hits);
         }
         #endregion
 

@@ -53,6 +53,7 @@ namespace CustomController
         /// <summary>
         /// The positional offset from the origin of the collider
         /// </summary>
+        [SerializeField]
         private Vector3 posOffset;
         /// <summary>
         /// The orientation of the collider. Orientation points towards the top of the capsual
@@ -524,7 +525,7 @@ namespace CustomController
         /// <returns></returns>
         bool CheckForOverlap()
         {   // Get any overlapping colliders
-            int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius, _tempHits, collisionLayers);
+            int hit = Physics.OverlapCapsuleNonAlloc(GetUpperPoint(), GetLowerPoint(), TrueRadius - TINY_DEDUCTION, _tempHits, collisionLayers);
 
             for (int i = 0; i < hit; i++)
             {   // If the collider is not our collider, assume we are going to clip into terrain.
@@ -577,8 +578,8 @@ namespace CustomController
 #if UNITY_EDITOR
         public override void EDITOR_GizmosDrawCollider()
         {
-            Gizmos.DrawWireSphere(GetOriginPosition() + Orientation * UpperHeight, Radius);
-            Gizmos.DrawWireSphere(GetOriginPosition() - Orientation * LowerHeight, Radius);
+            Gizmos.DrawWireSphere(GetOriginPosition() + Orientation * (UpperHeight - Radius), Radius);
+            Gizmos.DrawWireSphere(GetOriginPosition() - Orientation * (LowerHeight - Radius), Radius);
         }
 #endif
     }

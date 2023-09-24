@@ -26,9 +26,12 @@ public class CameraFollower : MonoBehaviour
     {   //Make sure we have a target
         if (target == null)
             return;
+
+        var pc = target.GetComponent<PlayerController>();
         //Set the cameras target position and rotation
         transform.position = target.transform.position + positionOffset;
         Vector3 v = target.transform.eulerAngles + rotationOffset;
+        v.x = pc.xEulerRotation;
         transform.eulerAngles = v;
     }
 }
