@@ -2,11 +2,16 @@
 using System.IO;
 using System.Text;
 using System.Collections.Generic;
-using UnityEngine;
 
 /*
- To Do:
- - Optimize (there is un-necessary memeory alloc during the process)
+    To Do:
+    - Optimize (there is un-necessary memeory alloc during the process)
+    - Add Safety Catches to avoid exceptions
+        > File MIA or cannot be opened
+        > Header Id not registered
+        > Exception when loading or serializing object
+
+    - Async functions?
 
     Ideas:
     - Could explose the BinaryWriter to objects to handle writing, then manually calculate written size. Might reduce the generation of byte[] slightly?
@@ -18,15 +23,38 @@ using UnityEngine;
 /// </summary>
 public static class BinaryFileWriter
 {
+    /// <summary>
+    /// Functions for deserializing a chunk
+    /// </summary>
+    /// <param name="version">The version of the serializer used to make the chunk</param>
+    /// <param name="chunk">The byte[] of data</param>
+    /// <param name="children">Any child objects the serializer said it had.</param>
+    /// <returns>Return the object generated from the data</returns>
     public delegate object Deserializer(int version, byte[] chunk, object[] children);
 
-    static Dictionary<string, Deserializer> deserializers = new Dictionary<string, Deserializer>();
+    /// <summary>
+    /// The registered deserializers
+    /// </summary>
+    static Dictionary<string, Deserializer> registeredDeserializers = new Dictionary<string, Deserializer>();
 
+    /// <summary>
+    /// Register a deserializer for a file type
+    /// </summary>
+    /// <param name="headerId"></param>
+    /// <param name="function"></param>
     public static void RegisterDeserializer(string headerId, Deserializer function)
     {
-        deserializers.Add(headerId, function);
+        if (ValidateHeader(headerId))
+            throw new Exception(string.Format("Header '{0}' is not 4 bytes in length. Header must be a 4 byte long utf8 string!", headerId));
+
+        registeredDeserializers.Add(headerId, function);
     }
 
+    /// <summary>
+    /// Write an object into a file
+    /// </summary>
+    /// <param name="object"></param>
+    /// <param name="fullPathAndName"></param>
     public static void WriteToFile(IWrittable @object, string fullPathAndName)
     {
         var stream = File.OpenWrite(fullPathAndName);
@@ -42,7 +70,7 @@ public static class BinaryFileWriter
 
         void SerializeObject(IWrittable toSerialize)
         {   // Get object data
-            Header header = GetHeader(toSerialize, out byte[] chunk, out IWrittable[] children);
+            HeaderData header = GetHeader(toSerialize, out byte[] chunk, out IWrittable[] children);
 
             // Add the data to our output file
             writer.Write(header.ToBytes(), 0, 16);
@@ -56,6 +84,11 @@ public static class BinaryFileWriter
         }
     }
 
+    /// <summary>
+    /// Read a specific file into an object.
+    /// </summary>
+    /// <param name="fullPathAndName"></param>
+    /// <returns>The object and it's Id (to help cast it to the correct type)</returns>
     public static (object LoadedFile, string Header) ReadFile(string fullPathAndName)
     {
         var stream = File.OpenRead(fullPathAndName);
@@ -75,7 +108,7 @@ public static class BinaryFileWriter
         (object Object, string Id) Deserialize()
         {   // Read the header
             reader.Read(headerBuffer, 0, 16);
-            Header header = Header.FromBytes(headerBuffer);
+            HeaderData header = HeaderData.FromBytes(headerBuffer);
 
             // Read the rest of the data.
             string headerId = Encoding.UTF8.GetString(header.id);
@@ -87,12 +120,28 @@ public static class BinaryFileWriter
                 children[i] = Deserialize().Object;
 
             // Deserialize children
-            return (deserializers[headerId](header.version, chunk, children), headerId);
+            return (registeredDeserializers[headerId](header.version, chunk, children), headerId);
         }
 
         return result;
     }
 
+    /// <summary>
+    /// Determines if the header is valid
+    /// </summary>
+    /// <param name="header"></param>
+    /// <returns></returns>
+    static bool ValidateHeader(string header)
+    {
+        return Encoding.UTF8.GetByteCount(header) == 4;
+    }
+
+    /// <summary>
+    /// Determines if the header is valid. Also spits out the bytes for the header for serialization
+    /// </summary>
+    /// <param name="header"></param>
+    /// <param name="headerBytes">The bytes for the header</param>
+    /// <returns></returns>
     static bool ValidateHeader(string header, out byte[] headerBytes)
     {
         headerBytes = Encoding.UTF8.GetBytes(header);
@@ -100,9 +149,19 @@ public static class BinaryFileWriter
         return headerBytes.Length == 4;
     }
 
-    static Header GetHeader(IWrittable @object, out byte[] chunk, out IWrittable[] children)
+    /// <summary>
+    /// Generate the header for a Writtable object.
+    /// </summary>
+    /// <param name="object">The object to serialize</param>
+    /// <param name="chunk">The chunk data for this object</param>
+    /// <param name="children">The child objects that need to be serialized</param>
+    /// <returns></returns>
+    /// <remarks>
+    /// Also spits out the Chunk & Children objects as they were loaded to get the header (not point in letting data go to waste)
+    /// </remarks>
+    static HeaderData GetHeader(IWrittable @object, out byte[] chunk, out IWrittable[] children)
     {
-        Header header = new Header();
+        HeaderData header = new HeaderData();
         var idData = @object.GetHeader();
         // Validate header can be used
         if (ValidateHeader(idData.UTF8Header, out header.id))
@@ -118,7 +177,10 @@ public static class BinaryFileWriter
         return header;
     }
 
-    ref struct Header
+    /// <summary>
+    /// Struct to hold Header information
+    /// </summary>
+    ref struct HeaderData
     {
         public byte[] id;
         public int version;
@@ -140,9 +202,9 @@ public static class BinaryFileWriter
             return bytes;
         }
 
-        public static Header FromBytes(byte[] bytes)
+        public static HeaderData FromBytes(byte[] bytes)
         {
-            Header header = new Header();
+            HeaderData header = new HeaderData();
             header.id = new byte[4];
             // Extract header
             Array.Copy(bytes, 0, header.id, 0, 4);
