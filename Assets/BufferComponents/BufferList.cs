@@ -36,7 +36,6 @@ public static class BufferList<T>
         }
 
         // Just clear it just in case they need it that way
-        BufferList.buffer.Clear();
         return new Buffer(BufferList.buffer);
     }
     /// <summary>
