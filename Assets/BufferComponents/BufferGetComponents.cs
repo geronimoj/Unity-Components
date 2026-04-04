@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class BufferComponent
+public static class BufferGetComponents
 {
     const int DEFAULT_CAPACITY = 100;
     /// <summary>
