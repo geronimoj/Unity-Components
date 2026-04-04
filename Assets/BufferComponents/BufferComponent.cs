@@ -25,9 +25,13 @@ public static class BufferComponent
     /// <returns></returns>
     public static BufferedResults<T> GetComponents<T>(this Component component, int minCapacity = DEFAULT_CAPACITY) where T : Component
     {
+        // The buffer system used an object type List class, so we cannot directly had it into GetComponents
+        // Thus we use the getBuffer.
         var buffer = BufferList<Component>.Get(minCapacity);
+        getBuffer ??= new List<Component>(GET_BUFFER_CAPACITY);
 
-        component.GetComponents(typeof(T), buffer);
+        component.GetComponents(typeof(T), getBuffer);
+        buffer.buffer.AddRange(getBuffer);
 
         return new BufferedResults<T>(buffer);
     }
@@ -64,7 +68,7 @@ public static class BufferComponent
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.AddRange(getBuffer);
+            buffer.buffer.AddRange(getBuffer);
 
             // Go over each child and search them for components as well
             int childCount = target.childCount;
@@ -113,7 +117,7 @@ public static class BufferComponent
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.AddRange(getBuffer);
+            buffer.buffer.AddRange(getBuffer);
 
             // Check each parent
             Transform parent = target.parent;
@@ -131,12 +135,20 @@ public static class BufferComponent
         }
     }
 
+    /// <summary>
+    /// Deletes all allocated buffers, sending them to GC
+    /// </summary>
+    public static void Dispose()
+    {
+        getBuffer = null;
+    }
+
     public struct BufferedResults<T> : IEnumerator<T> where T : Component
     {
         /// <summary>
         /// The buffer we are reading from
         /// </summary>
-        List<Component> buffer;
+        BufferList<Component>.Buffer buffer;
         /// <summary>
         /// The index the enumerator is currently at
         /// </summary>
@@ -148,7 +160,7 @@ public static class BufferComponent
             get
             {
                 // Throw relevant exceptions when directly indexing
-                if (buffer == null)
+                if (!buffer.IsValid)
                     throw new NullReferenceException("Buffer is null");
 
                 if (index >= buffer.Count)
@@ -165,7 +177,7 @@ public static class BufferComponent
         {
             get
             {   // If invalid buffer or buffer is out of range
-                if (buffer == null || index >= buffer.Count)
+                if (!buffer.IsValid || index >= buffer.Count)
                     return default;
 
                 return buffer[index] as T;
@@ -174,7 +186,7 @@ public static class BufferComponent
 
         object IEnumerator.Current => Current;
 
-        public BufferedResults(List<Component> buffer)
+        public BufferedResults(BufferList<Component>.Buffer buffer)
         {
             this.buffer = buffer;
             index = 0;
@@ -182,13 +194,14 @@ public static class BufferComponent
 
         public void Dispose()
         {
-            buffer = null;
+            buffer.Dispose();
+            buffer = default;
             index = 0;
         }
 
         public bool MoveNext()
         {   // Buffer is empty
-            if (buffer == null)
+            if (!buffer.IsValid)
                 return false;
 
             index++;

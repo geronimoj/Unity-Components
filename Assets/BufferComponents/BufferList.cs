@@ -50,7 +50,7 @@ public static class BufferList<T>
 
     public struct Buffer : IEnumerator<T>
     {
-        List<object> buffer;
+        public List<object> buffer;
         /// <summary>
         /// The index the enumerator is currently at
         /// </summary>
@@ -71,6 +71,10 @@ public static class BufferList<T>
                 return (T)buffer[index];
             }
         }
+
+        public readonly bool IsValid => buffer != null;
+
+        public readonly int Count => buffer?.Count ?? 0;
 
         /// <summary>
         /// The current object the enumeartor is targeting
