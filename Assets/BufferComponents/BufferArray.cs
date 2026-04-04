@@ -20,6 +20,45 @@ public static class BufferArray
         if (buffer == null || buffer.Length < minCapacity)
             buffer = new object[minCapacity];
     }
+    /// <summary>
+    /// Empties the buffer of all existing values.
+    /// </summary>
+    public static void Clear()
+    {   // Buffer not initialized, don't worry about it
+        if (buffer == null)
+            return;
+
+        // Clear all entries in the buffer
+        for (int i = 0; i < buffer.Length; i++)
+            buffer[i] = default;
+    }
+
+    /// <summary>
+    /// Empties a fixed number of entries from the buffer.
+    /// </summary>
+    /// <param name="maxCapacity"></param>
+    public static void Clear(int maxCapacity)
+    {   // Buffer not initialized ,don't worry about it
+        if (buffer == null)
+            return;
+
+        for (int i = 0; i < buffer.Length && i < maxCapacity; i++)
+            buffer[i] = default;
+    }
+
+    public static void Clear(ArraySegment<object> bufferSegment)
+    {   // Not our buffer >:( Cannot be cleaned
+        if (bufferSegment.Array != buffer)
+            throw new InvalidOperationException("Buffer is not the originating buffer");
+
+        // Buffer unititialized
+        if (buffer == null)
+            return;
+
+        // Clear that specific segment of the buffer
+        for (int i = bufferSegment.Offset; i < bufferSegment.Count; i++)
+            buffer[i] = default;
+    }
 
     /// <summary>
     /// Deletes the buffer, sending it to GC
@@ -49,42 +88,17 @@ public static class BufferArray<T>
     /// <summary>
     /// Empties the buffer of all existing values.
     /// </summary>
-    public static void Clear()
-    {   // Buffer not initialized, don't worry about it
-        if (BufferArray.buffer == null)
-            return;
+    public static void Clear() => BufferArray.Clear();
 
-        // Clear all entries in the buffer
-        for (int i = 0; i < BufferArray.buffer.Length; i++)
-            BufferArray.buffer[i] = default;
-    }
-    
     /// <summary>
     /// Empties a fixed number of entries from the buffer.
     /// </summary>
     /// <param name="maxCapacity"></param>
-    public static void Clear(int maxCapacity)
-    {   // Buffer not initialized ,don't worry about it
-        if (BufferArray.buffer == null)
-            return;
+    public static void Clear(int maxCapacity) => BufferArray.Clear(maxCapacity);
 
-        for (int i = 0; i < BufferArray.buffer.Length && i < maxCapacity; i++)
-            BufferArray.buffer[i] = default;
-    }
+    public static void Clear(Buffer bufferSegment) => BufferArray.Clear(bufferSegment.buffer);
 
-    public static void Clear(Buffer bufferSegment)
-    {   // Not our buffer >:( Cannot be cleaned
-        if (bufferSegment.buffer.Array != BufferArray.buffer)
-            throw new InvalidOperationException("Buffer is not the originating buffer");
-
-        // Buffer unititialized
-        if (BufferArray.buffer == null)
-            return;
-
-        // Clear that specific segment of the buffer
-        for (int i = bufferSegment.buffer.Offset; i < bufferSegment.buffer.Count; i++)
-            BufferArray.buffer[i] = default;
-    }
+    public static void Dispose() => BufferList.Dispose();
 
     public struct Buffer : IEnumerator<T>
     {
