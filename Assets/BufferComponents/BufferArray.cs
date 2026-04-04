@@ -12,13 +12,13 @@ public static class BufferArray
     internal static object[] buffer = null;
 
     /// <summary>
-    /// For pre-emptively initializing the buffer with a minimum size.
+    /// Expands the buffer large enough to store capacity & returns a segment of it
     /// </summary>
     /// <param name="minCapacity"></param>
-    public static void Initialize(int minCapacity)
+    /// <returns></returns>
+    public static BufferArray<T> Get<T>(int minCapacity)
     {
-        if (buffer == null || buffer.Length < minCapacity)
-            buffer = new object[minCapacity];
+        return new BufferArray<T>(minCapacity);
     }
     /// <summary>
     /// Empties the buffer of all existing values.
@@ -70,25 +70,19 @@ public static class BufferArray
 
 }
 
-public static class BufferArray<T>
+/// <summary>
+/// An array of items, allocated from a single global buffer
+/// </summary>
+/// <typeparam name="T"></typeparam>
+public struct BufferArray<T> : IEnumerable<T>, IEnumerable
 {
+    #region Static Functions
     /// <summary>
     /// Expands the buffer large enough to store capacity & returns a segment of it
     /// </summary>
     /// <param name="minCapacity"></param>
     /// <returns></returns>
-    public static Buffer Get(int minCapacity)
-    {
-        if (BufferArray.buffer == null || BufferArray.buffer.Length < minCapacity)
-            BufferArray.buffer = new object[minCapacity];
-
-        return new Buffer(new ArraySegment<object>(BufferArray.buffer, 0, minCapacity));
-    }
-
-    /// <summary>
-    /// Empties the buffer of all existing values.
-    /// </summary>
-    public static void Clear() => BufferArray.Clear();
+    public static BufferArray<T> Get(int minCapacity) => BufferArray.Get<T>(minCapacity);
 
     /// <summary>
     /// Empties a fixed number of entries from the buffer.
@@ -96,112 +90,142 @@ public static class BufferArray<T>
     /// <param name="maxCapacity"></param>
     public static void Clear(int maxCapacity) => BufferArray.Clear(maxCapacity);
 
-    public static void Clear(Buffer bufferSegment) => BufferArray.Clear(bufferSegment.buffer);
+    public static void Clear(BufferArray<T> bufferSegment) => BufferArray.Clear(bufferSegment.buffer);
 
-    public static void Dispose() => BufferList.Dispose();
+    public static void Dispose() => BufferArray.Dispose();
+    #endregion
 
-    public struct Buffer : IEnumerable<T>, IEnumerable
+    /// <summary>
+    /// The internal object buffer
+    /// </summary>
+    ArraySegment<object> buffer;
+    /// <summary>
+    /// Accessor for buffer elements
+    /// </summary>
+    /// <param name="index">The index to get</param>
+    /// <returns></returns>
+    /// <exception cref="NullReferenceException">Buffer is null</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Index is out of range</exception>
+    public T this[int index]
+    {
+        readonly get
+        {
+            // Throw relevant exceptions when directly indexing
+            if (buffer == null)
+                throw new NullReferenceException("Buffer is null");
+
+            if (index < 0 || index >= buffer.Count)
+                throw new ArgumentOutOfRangeException();
+
+            return (T)buffer[index];
+        }
+        set
+        {
+            BufferArray<T> b = new BufferArray<T>(1);
+
+            // Throw relevant exceptions when directly indexing
+            if (buffer == null)
+                throw new NullReferenceException("Buffer is null");
+
+            if (index >= buffer.Count)
+                throw new ArgumentOutOfRangeException();
+
+            buffer[index] = value;
+        }
+    }
+    /// <summary>
+    /// Is the buffer valid
+    /// </summary>
+    public readonly bool IsValid => buffer != null;
+    /// <summary>
+    /// The length of this buffer array
+    /// </summary>
+    public readonly int Length => buffer.Count;
+
+    public BufferArray(int minCapacity)
+    {
+        if (BufferArray.buffer == null || BufferArray.buffer.Length < minCapacity)
+            BufferArray.buffer = new object[minCapacity];
+
+        buffer = new ArraySegment<object>(BufferArray.buffer, 0, minCapacity);
+    }
+
+    /// <summary>
+    /// Clears the buffer for this buffer array
+    /// </summary>
+    public void Clear()
+    {
+        Clear(this);
+    }
+    /// <summary>
+    /// Invalidates this buffer array
+    /// </summary>
+    public void Invalidate()
+    {
+        buffer = null;
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        return new Enumerator(buffer);
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    public struct Enumerator : IEnumerator<T>
     {
         /// <summary>
         /// The internal object buffer
         /// </summary>
         internal ArraySegment<object> buffer;
+        /// <summary>
+        /// The index the enumerator is currently at
+        /// </summary>
+        int index;
 
-        public T this[int index]
+        /// <summary>
+        /// The current object the enumeartor is targeting
+        /// </summary>
+        public T Current
         {
-            readonly get
-            {
-                // Throw relevant exceptions when directly indexing
-                if (buffer == null)
-                    throw new NullReferenceException("Buffer is null");
-
-                if (index >= buffer.Count)
-                    throw new ArgumentOutOfRangeException();
+            get
+            {   // If invalid buffer or buffer is out of range
+                if (buffer == null || index >= buffer.Count)
+                    return default;
 
                 return (T)buffer[index];
             }
-            set
-            {
-                // Throw relevant exceptions when directly indexing
-                if (buffer == null)
-                    throw new NullReferenceException("Buffer is null");
-
-                if (index >= buffer.Count)
-                    throw new ArgumentOutOfRangeException();
-
-                buffer[index] = value;
-            }
         }
 
-        public readonly int Length => buffer.Count;
+        object IEnumerator.Current => Current;
 
-        public Buffer(ArraySegment<object> buffer)
+        public Enumerator(ArraySegment<object> buffer)
         {
             this.buffer = buffer;
+            this.index = 0;
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public void Dispose()
         {
-            return new Enumerator(buffer);
+            buffer = null;
+            index = 0;
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
+        public bool MoveNext()
+        {   // Buffer is empty
+            if (buffer == null)
+                return false;
+
+            index++;
+            return index < buffer.Count;
         }
 
-        public struct Enumerator : IEnumerator<T>
+        public void Reset()
         {
-            /// <summary>
-            /// The internal object buffer
-            /// </summary>
-            internal ArraySegment<object> buffer;
-            /// <summary>
-            /// The index the enumerator is currently at
-            /// </summary>
-            int index;
-
-            /// <summary>
-            /// The current object the enumeartor is targeting
-            /// </summary>
-            public T Current
-            {
-                get
-                {   // If invalid buffer or buffer is out of range
-                    if (buffer == null || index >= buffer.Count)
-                        return default;
-
-                    return (T)buffer[index];
-                }
-            }
-
-            object IEnumerator.Current => Current;
-
-            public Enumerator(ArraySegment<object> buffer)
-            {
-                this.buffer = buffer;
-                this.index = 0;
-            }
-
-            public void Dispose()
-            {
-                buffer = null;
-                index = 0;
-            }
-
-            public bool MoveNext()
-            {   // Buffer is empty
-                if (buffer == null)
-                    return false;
-
-                index++;
-                return index < buffer.Count;
-            }
-
-            public void Reset()
-            {
-                index = 0;
-            }
+            index = 0;
         }
     }
 }
