@@ -31,7 +31,7 @@ public static class BufferGetComponents
         getBuffer ??= new List<Component>(GET_BUFFER_CAPACITY);
 
         component.GetComponents(typeof(T), getBuffer);
-        buffer.List.AddRange(getBuffer);
+        buffer.AddRange(getBuffer);
 
         return new BufferedResults<T>(buffer);
     }
@@ -68,7 +68,7 @@ public static class BufferGetComponents
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.List.AddRange(getBuffer);
+            buffer.AddRange(getBuffer);
 
             // Go over each child and search them for components as well
             int childCount = target.childCount;
@@ -117,7 +117,7 @@ public static class BufferGetComponents
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.List.AddRange(getBuffer);
+            buffer.AddRange(getBuffer);
 
             // Check each parent
             Transform parent = target.parent;
@@ -148,16 +148,13 @@ public static class BufferGetComponents
         /// <summary>
         /// The buffer we are reading from
         /// </summary>
-        BufferList<Component>.Buffer buffer;
+        BufferList<Component> buffer;
 
         public readonly T this[int index]
         {
             get
             {
                 // Throw relevant exceptions when directly indexing
-                if (!buffer.IsValid)
-                    throw new NullReferenceException("Buffer is null");
-
                 if (index >= buffer.Count)
                     throw new ArgumentOutOfRangeException();
 
@@ -165,7 +162,7 @@ public static class BufferGetComponents
             }
         }
 
-        public BufferedResults(BufferList<Component>.Buffer buffer)
+        public BufferedResults(BufferList<Component> buffer)
         {
             this.buffer = buffer;
         }
@@ -185,7 +182,7 @@ public static class BufferGetComponents
             /// <summary>
             /// The buffer we are reading from
             /// </summary>
-            BufferList<Component>.Buffer buffer;
+            BufferList<Component> buffer;
             /// <summary>
             /// The index the enumerator is currently at
             /// </summary>
@@ -198,7 +195,7 @@ public static class BufferGetComponents
             {
                 get
                 {   // If invalid buffer or buffer is out of range
-                    if (!buffer.IsValid || index >= buffer.Count)
+                    if (index >= buffer.Count)
                         return default;
 
                     return buffer[index] as T;
@@ -207,7 +204,7 @@ public static class BufferGetComponents
 
             object IEnumerator.Current => Current;
 
-            public Enumerator(BufferList<Component>.Buffer buffer)
+            public Enumerator(BufferList<Component> buffer)
             {
                 this.buffer = buffer;
                 index = 0;
@@ -220,10 +217,7 @@ public static class BufferGetComponents
             }
 
             public bool MoveNext()
-            {   // Buffer is empty
-                if (!buffer.IsValid)
-                    return false;
-
+            {   
                 index++;
                 return index < buffer.Count;
             }
