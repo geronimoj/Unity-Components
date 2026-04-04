@@ -100,21 +100,16 @@ public static class BufferArray<T>
 
     public static void Dispose() => BufferList.Dispose();
 
-    public struct Buffer : IEnumerator<T>
+    public struct Buffer : IEnumerable<T>, IEnumerable
     {
         /// <summary>
         /// The internal object buffer
         /// </summary>
         internal ArraySegment<object> buffer;
-        /// <summary>
-        /// The index the enumerator is currently at
-        /// </summary>
-        int index;
-
 
         public T this[int index]
         {
-            get
+            readonly get
             {
                 // Throw relevant exceptions when directly indexing
                 if (buffer == null)
@@ -125,48 +120,88 @@ public static class BufferArray<T>
 
                 return (T)buffer[index];
             }
-        }
+            set
+            {
+                // Throw relevant exceptions when directly indexing
+                if (buffer == null)
+                    throw new NullReferenceException("Buffer is null");
 
-        /// <summary>
-        /// The current object the enumeartor is targeting
-        /// </summary>
-        public T Current
-        {
-            get
-            {   // If invalid buffer or buffer is out of range
-                if (buffer == null || index >= buffer.Count)
-                    return default;
+                if (index >= buffer.Count)
+                    throw new ArgumentOutOfRangeException();
 
-                return (T)buffer[index];
+                buffer[index] = value;
             }
         }
 
-        object IEnumerator.Current => Current;
+        public readonly int Length => buffer.Count;
 
         public Buffer(ArraySegment<object> buffer)
         {
             this.buffer = buffer;
-            index = 0;
         }
 
-        public void Dispose()
+        public IEnumerator<T> GetEnumerator()
         {
-            buffer = null;
-            index = 0;
+            return new Enumerator(buffer);
         }
 
-        public bool MoveNext()
-        {   // Buffer is empty
-            if (buffer == null)
-                return false;
-
-            index++;
-            return index < buffer.Count;
-        }
-
-        public void Reset()
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            index = 0;
+            return GetEnumerator();
+        }
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            /// <summary>
+            /// The internal object buffer
+            /// </summary>
+            internal ArraySegment<object> buffer;
+            /// <summary>
+            /// The index the enumerator is currently at
+            /// </summary>
+            int index;
+
+            /// <summary>
+            /// The current object the enumeartor is targeting
+            /// </summary>
+            public T Current
+            {
+                get
+                {   // If invalid buffer or buffer is out of range
+                    if (buffer == null || index >= buffer.Count)
+                        return default;
+
+                    return (T)buffer[index];
+                }
+            }
+
+            object IEnumerator.Current => Current;
+
+            public Enumerator(ArraySegment<object> buffer)
+            {
+                this.buffer = buffer;
+                this.index = 0;
+            }
+
+            public void Dispose()
+            {
+                buffer = null;
+                index = 0;
+            }
+
+            public bool MoveNext()
+            {   // Buffer is empty
+                if (buffer == null)
+                    return false;
+
+                index++;
+                return index < buffer.Count;
+            }
+
+            public void Reset()
+            {
+                index = 0;
+            }
         }
     }
 }

@@ -31,7 +31,7 @@ public static class BufferGetComponents
         getBuffer ??= new List<Component>(GET_BUFFER_CAPACITY);
 
         component.GetComponents(typeof(T), getBuffer);
-        buffer.buffer.AddRange(getBuffer);
+        buffer.List.AddRange(getBuffer);
 
         return new BufferedResults<T>(buffer);
     }
@@ -68,7 +68,7 @@ public static class BufferGetComponents
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.buffer.AddRange(getBuffer);
+            buffer.List.AddRange(getBuffer);
 
             // Go over each child and search them for components as well
             int childCount = target.childCount;
@@ -117,7 +117,7 @@ public static class BufferGetComponents
         {
             // Get the components and add them to the return buffer
             target.GetComponents(typeof(T), getBuffer);
-            buffer.buffer.AddRange(getBuffer);
+            buffer.List.AddRange(getBuffer);
 
             // Check each parent
             Transform parent = target.parent;
@@ -143,19 +143,14 @@ public static class BufferGetComponents
         getBuffer = null;
     }
 
-    public struct BufferedResults<T> : IEnumerator<T> where T : Component
+    public struct BufferedResults<T> : IEnumerable<T>, IEnumerable where T : Component
     {
         /// <summary>
         /// The buffer we are reading from
         /// </summary>
         BufferList<Component>.Buffer buffer;
-        /// <summary>
-        /// The index the enumerator is currently at
-        /// </summary>
-        int index;
 
-
-        public T this[int index]
+        public readonly T this[int index]
         {
             get
             {
@@ -170,47 +165,73 @@ public static class BufferGetComponents
             }
         }
 
-        /// <summary>
-        /// The current object the enumeartor is targeting
-        /// </summary>
-        public T Current
-        {
-            get
-            {   // If invalid buffer or buffer is out of range
-                if (!buffer.IsValid || index >= buffer.Count)
-                    return default;
-
-                return buffer[index] as T;
-            }
-        }
-
-        object IEnumerator.Current => Current;
-
         public BufferedResults(BufferList<Component>.Buffer buffer)
         {
             this.buffer = buffer;
-            index = 0;
         }
 
-        public void Dispose()
+        public readonly IEnumerator<T> GetEnumerator()
         {
-            buffer.Dispose();
-            buffer = default;
-            index = 0;
+            return new Enumerator(buffer);
         }
 
-        public bool MoveNext()
-        {   // Buffer is empty
-            if (!buffer.IsValid)
-                return false;
-
-            index++;
-            return index < buffer.Count;
-        }
-
-        public void Reset()
+        readonly IEnumerator IEnumerable.GetEnumerator()
         {
-            index = 0;
+            return GetEnumerator();
+        }
+
+        public struct Enumerator : IEnumerator<T>
+        {
+            /// <summary>
+            /// The buffer we are reading from
+            /// </summary>
+            BufferList<Component>.Buffer buffer;
+            /// <summary>
+            /// The index the enumerator is currently at
+            /// </summary>
+            int index;
+
+            /// <summary>
+            /// The current object the enumeartor is targeting
+            /// </summary>
+            public T Current
+            {
+                get
+                {   // If invalid buffer or buffer is out of range
+                    if (!buffer.IsValid || index >= buffer.Count)
+                        return default;
+
+                    return buffer[index] as T;
+                }
+            }
+
+            object IEnumerator.Current => Current;
+
+            public Enumerator(BufferList<Component>.Buffer buffer)
+            {
+                this.buffer = buffer;
+                index = 0;
+            }
+
+            public void Dispose()
+            {
+                buffer = default;
+                index = 0;
+            }
+
+            public bool MoveNext()
+            {   // Buffer is empty
+                if (!buffer.IsValid)
+                    return false;
+
+                index++;
+                return index < buffer.Count;
+            }
+
+            public void Reset()
+            {
+                index = 0;
+            }
         }
     }
 }
