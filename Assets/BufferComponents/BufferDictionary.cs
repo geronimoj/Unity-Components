@@ -169,6 +169,18 @@ public struct BufferDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
         }
     }
 
+    public readonly Dictionary<TKey, TValue> ToDictionary()
+    {
+        int count = BufferDictionary.buffer.Count;
+        Dictionary<TKey, TValue> ret = new Dictionary<TKey, TValue>(count);
+
+        // Write the data in using our already type cases enumerator
+        foreach(var kvp in this)
+            ret[kvp.Key] = kvp.Value;
+
+        return ret;
+    }
+
     public readonly IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
         return new Enumerator(BufferDictionary.buffer);

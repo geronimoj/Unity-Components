@@ -153,9 +153,31 @@ public struct BufferArray<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// Clears the buffer for this buffer array
     /// </summary>
-    public void Clear()
+    public readonly void Clear()
     {
         Clear(this);
+    }
+
+    public readonly T[] ToArray()
+    {
+        int length = buffer.Count;
+        T[] ret = new T[length];
+
+        for (int i = 0; i < length; i++)
+            ret[i] = (T)buffer[i];
+
+        return ret;
+    }
+
+    public readonly List<T> ToList()
+    {
+        int length = buffer.Count;
+        List<T> ret = new List<T>(length);
+
+        for (int i = 0; i < length; i++)
+            ret.Add((T)buffer[i]);
+
+        return ret;
     }
     /// <summary>
     /// Invalidates this buffer array
