@@ -338,11 +338,4 @@ public struct BufferDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
             }
         }
     }
-    /* Functions to implement with Typed handling
-    ICollection<KeyValuePair<TKey, TValue>> , IDictionary<TKey, TValue>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>, IReadOnlyDictionary<TKey, TValue>, ICollection, IDictionary
-    
-    public KeyCollection Keys { get; }
-    public ValueCollection Values { get; }
-    public IEqualityComparer<TKey> Comparer { get; }
-    */
 }

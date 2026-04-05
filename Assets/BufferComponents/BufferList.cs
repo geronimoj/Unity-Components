@@ -121,6 +121,18 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
     /// </summary>
     public readonly void Clear() => BufferList.Clear();
 
+    public readonly void Sort(Comparison<T> comparison)
+    {
+        BufferList.buffer.Sort(Comparison);
+        int Comparison(object x, object y) => comparison((T)x, (T)y);
+    }
+    public readonly void Sort(IComparer<T> comparer) => Sort(0, BufferList.buffer.Count, comparer);
+    public readonly void Sort(int index, int count, IComparer<T> comparer) => BufferList.buffer.Sort(index, count, (IComparer<object>)comparer);
+
+    public readonly int BinarySearch(T item) => BufferList.buffer.BinarySearch(item);
+    public readonly int BinarySearch(T item, IComparer<T> comparer) => BufferList.buffer.BinarySearch(item, (IComparer<object>)comparer);
+    public readonly int BinarySearch(int index, int count, T item, IComparer<T> comparer) => BufferList.buffer.BinarySearch(index, count, item, (IComparer<object>)comparer);
+
     public readonly bool Exists(Predicate<T> match) => FindIndex(match) != -1;
     public readonly T Find(Predicate<T> match)
     {
@@ -152,6 +164,11 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
 
         return ret;
     }
+    public readonly T FindLast(Predicate<T> match)
+    {
+        return (T)BufferList.buffer.FindLast(Predicate);
+        bool Predicate(object item) => match((T)item);
+    }
     public readonly int FindIndex(Predicate<T> match) => FindIndex(0, match);
     public readonly int FindIndex(int index, Predicate<T> match) => FindIndex(index, BufferList.buffer.Count, match);
     public readonly int FindIndex(int index, int count, Predicate<T> match)
@@ -174,6 +191,13 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
     public readonly int LastIndexOf(T item) => BufferList.buffer.LastIndexOf(item);
     public readonly int LastIndexOf(T item, int index) => BufferList.buffer.LastIndexOf(item, index);
     public readonly int LastIndexOf(T item, int index, int count) => BufferList.buffer.LastIndexOf(item, index, count);
+    public readonly int FindLastIndex(Predicate<T> match) => FindLastIndex(0, match);
+    public readonly int FindLastIndex(int startIndex, Predicate<T> match) => FindLastIndex(0, BufferList.buffer.Count, match);
+    public readonly int FindLastIndex(int startIndex, int count, Predicate<T> match)
+    {
+        return BufferList.buffer.FindLastIndex(startIndex, count, Predicate);
+        bool Predicate(object item) => match((T)item);
+    }
 
     public readonly void Insert(int index, T item) => BufferList.buffer.Insert(index, item);
     public readonly void InsertRange(int index, IEnumerable<T> collection) => BufferList.buffer.InsertRange(index, (IEnumerable<object>)collection);
@@ -182,6 +206,11 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
     {
         foreach (var item in BufferList.buffer)
             action((T)item);
+    }
+    public readonly bool TrueForAll(Predicate<T> match)
+    {
+        return BufferList.buffer.TrueForAll(Predicate);
+        bool Predicate(object item) => match((T)item);
     }
     /// <summary>
     /// Creates a new list containing elements from the buffer
@@ -249,6 +278,17 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
         return ret;
     }
 
+    public readonly List<TOutput> ConvertAll<TOutput>(Converter<T, TOutput> converter)
+    {
+        int count = BufferList.buffer.Count;
+        List<TOutput> ret = new List<TOutput>(count);
+
+        foreach (var item in BufferList.buffer)
+            ret.Add(converter((T)item));
+
+        return ret;
+    }
+
     readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         return new Enumerator();
@@ -258,26 +298,6 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
     {
         return GetEnumerator();
     }
-
-    /* Functions to implement
-    ICollection<T>, IList<T>, IReadOnlyCollection<T>, IReadOnlyList<T>, ICollection, IList
-
-    public ReadOnlyCollection<T> AsReadOnly();
-    public int BinarySearch(int index, int count, T item, IComparer<T> comparer);
-    public int BinarySearch(T item);
-    public int BinarySearch(T item, IComparer<T> comparer);
-    public List<TOutput> ConvertAll<TOutput>(Converter<T, TOutput> converter);
-    public T FindLast(Predicate<T> match);
-    public int FindLastIndex(int startIndex, int count, Predicate<T> match);
-    public int FindLastIndex(int startIndex, Predicate<T> match);
-    public int FindLastIndex(Predicate<T> match);
-    public void Sort(Comparison<T> comparison);
-    public void Sort(int index, int count, IComparer<T> comparer);
-    public void Sort();
-    public void Sort(IComparer<T> comparer);
-    public void TrimExcess();
-    public bool TrueForAll(Predicate<T> match);
-     */
 
     public struct Enumerator : IEnumerator<T>
     {
