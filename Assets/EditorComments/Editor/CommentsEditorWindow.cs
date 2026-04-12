@@ -14,25 +14,40 @@ namespace EditorComments.Editor
         public const string STORAGE_PATH = "Editor/CommentStorage";
         public const string SAVE_PATH = "Assets/EditorComments/Editor/Resources/Editor";
 
-        public CommentStorage storage;
+        /// <summary>
+        /// The object holding the comments
+        /// </summary>
+        CommentStorage storage;
+
+        /// <summary>
+        /// Array of the currently selected objects in the editor
+        /// </summary>
         Object[] selected;
 
         [MenuItem("Window/General/Comments")]
         static void OpenCommentWindow()
         {
             CommentsEditorWindow window = GetWindow<CommentsEditorWindow>();
-            window.storage = Resources.Load<CommentStorage>(STORAGE_PATH);
-
-            if (window.storage == null)
-            {
-                AssetDatabase.CreateAsset(new CommentStorage(), SAVE_PATH + "/CommentStorage.asset");
-                window.storage = Resources.Load<CommentStorage>(STORAGE_PATH);
-
-                EditorUtility.SetDirty(window.storage);
-                AssetDatabase.SaveAssets();
-            }
 
             window.Show();
+        }
+
+        private void LoadStorage()
+        {
+            if (storage != null)
+                return;
+
+            storage = Resources.Load<CommentStorage>(STORAGE_PATH);
+
+            // If the comment storage did not successfully load, create a new asset.
+            if (storage == null)
+            {
+                AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<CommentStorage>(), SAVE_PATH + "/CommentStorage.asset");
+                storage = Resources.Load<CommentStorage>(STORAGE_PATH);
+
+                EditorUtility.SetDirty(storage);
+                AssetDatabase.SaveAssets();
+            }
         }
 
         private void OnSelectionChange()
@@ -44,6 +59,8 @@ namespace EditorComments.Editor
 
         private void OnGUI()
         {
+            LoadStorage();
+
             // Don't render anything
             if (selected == null)
                 return;
