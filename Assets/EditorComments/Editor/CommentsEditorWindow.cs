@@ -1,3 +1,4 @@
+// Created by Luke Jones 12/04/2026
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,8 +11,17 @@ namespace EditorComments.Editor
     /// </summary>
     public class CommentsEditorWindow : EditorWindow
     {
+        /// <summary>
+        /// Max selectable objects. Limited to 1 beacuse of how display is defined. People probably don't care if they have multiple objects selected anyways :P
+        /// </summary>
         public const int MAX_SELECTABLE_OBJECTS = 1;
-        public const string STORAGE_PATH = "Editor/CommentStorage";
+        /// <summary>
+        /// Path to the storage asset in resources
+        /// </summary>
+        public const string RESOURCES_PATH = "Editor/CommentStorage";
+        /// <summary>
+        /// Save path for resources
+        /// </summary>
         public const string SAVE_PATH = "Assets/EditorComments/Editor/Resources/Editor";
 
         /// <summary>
@@ -27,8 +37,9 @@ namespace EditorComments.Editor
         [MenuItem("Window/General/Comments")]
         static void OpenCommentWindow()
         {
-            CommentsEditorWindow window = GetWindow<CommentsEditorWindow>();
-
+            // Create the window & load the storage object
+            CommentsEditorWindow window = GetWindow<CommentsEditorWindow>("Comments");
+            window.LoadStorage();
             window.Show();
         }
 
@@ -37,13 +48,13 @@ namespace EditorComments.Editor
             if (storage != null)
                 return;
 
-            storage = Resources.Load<CommentStorage>(STORAGE_PATH);
+            storage = Resources.Load<CommentStorage>(RESOURCES_PATH);
 
             // If the comment storage did not successfully load, create a new asset.
             if (storage == null)
             {
                 AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<CommentStorage>(), SAVE_PATH + "/CommentStorage.asset");
-                storage = Resources.Load<CommentStorage>(STORAGE_PATH);
+                storage = Resources.Load<CommentStorage>(RESOURCES_PATH);
 
                 EditorUtility.SetDirty(storage);
                 AssetDatabase.SaveAssets();
@@ -54,22 +65,37 @@ namespace EditorComments.Editor
         {
             selected = Selection.objects;
 
+            // Request a repaint on the UI element so that the window updates in real time.
             Repaint();
         }
 
         private void OnGUI()
         {
+            // Make sure the storage object is loaded. Mostly for the case where the window is auto-opened but also to support if the asset accidentally gets
+            // deleted or otherwise the reference is lost
             LoadStorage();
 
-            // Don't render anything
-            if (selected == null)
+            // If nothing is selected, notify the user nothing is selected
+            if (selected == null || selected.Length == 0)
+            {
+                // Yes, to position the lable correctly, I am using another label field, because I couldn't figure out how to get it to position correctly
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Space((position.width / 2) - 54);
+                EditorGUILayout.LabelField("Select an Object", GUILayout.Width(position.width), GUILayout.Height(position.height));
+                EditorGUILayout.EndHorizontal();
+
                 return;
+            }
 
             // If there are too many objects selected, don't render the comment window.
             // This is to save on performance if someone accidentally selects a lot of objects
             if (selected.Length > MAX_SELECTABLE_OBJECTS)
             {
-                EditorGUILayout.LabelField("Multiple Objects Selected");
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Space((position.width / 2) - 80);
+                EditorGUILayout.LabelField("Multiple Objects Selected", GUILayout.Width(position.width), GUILayout.Height(position.height));
+                EditorGUILayout.EndHorizontal();
+
                 return;
             }
 
@@ -78,8 +104,8 @@ namespace EditorComments.Editor
             {
                 var commentObj = storage.GetComments(obj);
 
-                EditorGUILayout.LabelField("Selected: " + obj.name);
-                string newComment = EditorGUILayout.TextArea(commentObj.comment, GUILayout.MinHeight(80f));
+                // Draw the comment in a text area, the size of the window
+                string newComment = EditorGUILayout.TextArea(commentObj.comment, GUILayout.MinHeight(position.height - 5));
 
                 // If the comment has changed, saved it
                 if (newComment != commentObj.comment)

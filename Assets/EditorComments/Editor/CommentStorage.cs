@@ -1,3 +1,4 @@
+// Created by Luke Jones 12/04/2026
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +17,11 @@ namespace EditorComments.Editor
         /// </summary>
         [SerializeField] CommentDictionary comments = null;
 
+        /// <summary>
+        /// Saves any changes to a comment object
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public CommentObject GetComments(UnityEngine.Object obj)
         {
             if (obj == null)
@@ -38,6 +44,10 @@ namespace EditorComments.Editor
             return instance;
         }
 
+        /// <summary>
+        /// Saves any changes made to a comment object
+        /// </summary>
+        /// <param name="comment"></param>
         public void SaveComment(CommentObject comment)
         {
             // Don't save an empty comment :P
