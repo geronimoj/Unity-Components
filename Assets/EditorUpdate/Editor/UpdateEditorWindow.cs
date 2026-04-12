@@ -13,7 +13,7 @@ public class UpdateEditorWindow : EditorWindow
     public float Tick => tick;
 
     #region Unimportant Stuff
-    [MenuItem("Window/Editor Window With Update")]
+    [MenuItem("Example/Editor Window With Update")]
     static void Init()
     {
         UpdateEditorWindow window = GetWindow<UpdateEditorWindow>();
