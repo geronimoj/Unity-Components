@@ -1,9 +1,7 @@
-using System.Collections;
-using System.Collections.Generic;
+// Created by Luke Jones 12/04/2026
 using UnityEngine;
-using UnityEditor;
 
-namespace EditorComments.Editor
+namespace VFlame.EditorComments.Editor
 {
     /// <summary>
     /// Stores the comments for an object

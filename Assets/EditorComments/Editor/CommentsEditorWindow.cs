@@ -1,10 +1,8 @@
 // Created by Luke Jones 12/04/2026
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-namespace EditorComments.Editor
+namespace VFlame.EditorComments.Editor
 {
     /// <summary>
     /// Editor window for displaying comments on selected objects

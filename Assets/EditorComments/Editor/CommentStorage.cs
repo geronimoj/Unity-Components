@@ -1,11 +1,10 @@
 // Created by Luke Jones 12/04/2026
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-namespace EditorComments.Editor
+namespace VFlame.EditorComments.Editor
 {
     /// <summary>
     /// Stores comments made
@@ -15,6 +14,7 @@ namespace EditorComments.Editor
         /// <summary>
         /// List of all comments on objects
         /// </summary>
+        [HideInInspector]
         [SerializeField] CommentDictionary comments = null;
 
         /// <summary>
