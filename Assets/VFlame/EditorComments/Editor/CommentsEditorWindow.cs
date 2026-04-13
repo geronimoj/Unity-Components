@@ -75,15 +75,8 @@ namespace VFlame.EditorComments.Editor
 
         private void OnGUI()
         {
-            // If we have null data, rebuild selection (repaint should be called)
-            if (selected == null || comments == null)
-            {
-                OnSelectionChange();
-                return;
-            }
-
             // If nothing is selected, notify the user nothing is selected
-            if (selected == null || selected.Length == 0)
+            if (selected == null || comments == null || selected.Length == 0)
             {
                 // Yes, to position the lable correctly, I am using another label field, because I couldn't figure out how to get it to position correctly
                 EditorGUILayout.BeginHorizontal();
