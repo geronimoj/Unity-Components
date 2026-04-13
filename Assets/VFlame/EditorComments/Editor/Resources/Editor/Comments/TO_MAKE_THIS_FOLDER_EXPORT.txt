@@ -1,0 +1,1 @@
+This file exists to make the Resources/Editor/Comments folder export. The file path is necessary for the functioning of the tool :P
