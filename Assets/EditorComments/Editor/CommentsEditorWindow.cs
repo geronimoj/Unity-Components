@@ -104,6 +104,19 @@ namespace EditorComments.Editor
             {
                 var commentObj = storage.GetComments(obj);
 
+                // Parse the objectId back to a GlobalObjectId so we can sanity check it. (Cheaper than recomputing it)
+                GlobalObjectId.TryParse(commentObj.objectId, out var id);
+
+                // If the Asset GUID is null & it's a scene asset, we cannot track it until the scene is saved!
+                if (id.identifierType == 2 && id.assetGUID == default)
+                {
+                    EditorGUILayout.BeginHorizontal();
+                    GUILayout.Space((position.width / 2) - 93);
+                    EditorGUILayout.LabelField("Save Scene to Create Comments", GUILayout.Width(position.width), GUILayout.Height(position.height));
+                    EditorGUILayout.EndHorizontal();
+                    return;
+                }
+
                 // Draw the comment in a text area, the size of the window
                 string newComment = EditorGUILayout.TextArea(commentObj.comment, GUILayout.MinHeight(position.height - 5));
 
