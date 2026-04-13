@@ -8,7 +8,7 @@ MonoBehaviour:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
-  m_EditorHideFlags: 1
+  m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 247048caec284f1429fa4a60d478fb4f, type: 3}
   m_Name: CommentStorage
   m_EditorClassIdentifier: 

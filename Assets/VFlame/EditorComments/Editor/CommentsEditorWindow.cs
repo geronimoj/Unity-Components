@@ -20,7 +20,7 @@ namespace VFlame.EditorComments.Editor
         /// <summary>
         /// Save path for resources
         /// </summary>
-        public const string SAVE_PATH = "Assets/EditorComments/Editor/Resources/Editor";
+        public const string SAVE_PATH = "Assets/VFlame/EditorComments/Editor/Resources/Editor";
 
         /// <summary>
         /// The object holding the comments
@@ -31,6 +31,10 @@ namespace VFlame.EditorComments.Editor
         /// Array of the currently selected objects in the editor
         /// </summary>
         Object[] selected;
+        /// <summary>
+        /// Array containing the comments of the selected objects
+        /// </summary>
+        CommentObject[] comments;
 
         [MenuItem("Window/General/Comments")]
         static void OpenCommentWindow()
@@ -38,6 +42,7 @@ namespace VFlame.EditorComments.Editor
             // Create the window & load the storage object
             CommentsEditorWindow window = GetWindow<CommentsEditorWindow>("Comments");
             window.LoadStorage();
+            window.OnSelectionChange();
             window.Show();
         }
 
@@ -61,7 +66,25 @@ namespace VFlame.EditorComments.Editor
 
         private void OnSelectionChange()
         {
+            // Make sure the storage object is loaded. Mostly for the case where the window is auto-opened but also to support if the asset accidentally gets
+            // deleted or otherwise the reference is lost
+            LoadStorage();
+
             selected = Selection.objects;
+
+            // If there are too many objects selected, don't bother with comments
+            if (selected.Length > MAX_SELECTABLE_OBJECTS)
+            {
+                comments = new CommentObject[0];
+            }
+            else
+            {
+                // Load the comments into memory
+                comments = new CommentObject[selected.Length];
+
+                for (int i = 0; i < comments.Length; i++)
+                    comments[i] = storage.GetComments(selected[i]);
+            }
 
             // Request a repaint on the UI element so that the window updates in real time.
             Repaint();
@@ -69,9 +92,12 @@ namespace VFlame.EditorComments.Editor
 
         private void OnGUI()
         {
-            // Make sure the storage object is loaded. Mostly for the case where the window is auto-opened but also to support if the asset accidentally gets
-            // deleted or otherwise the reference is lost
-            LoadStorage();
+            // If we have null data, rebuild selection (repaint should be called)
+            if (selected == null || comments == null)
+            {
+                OnSelectionChange();
+                return;
+            }
 
             // If nothing is selected, notify the user nothing is selected
             if (selected == null || selected.Length == 0)
@@ -98,10 +124,8 @@ namespace VFlame.EditorComments.Editor
             }
 
             // Render the comment for each selected object.
-            foreach (var obj in selected)
+            foreach (var commentObj in comments)
             {
-                var commentObj = storage.GetComments(obj);
-
                 // Parse the objectId back to a GlobalObjectId so we can sanity check it. (Cheaper than recomputing it)
                 GlobalObjectId.TryParse(commentObj.objectId, out var id);
 
