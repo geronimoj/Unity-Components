@@ -14,13 +14,9 @@ namespace VFlame.EditorComments.Editor
         /// </summary>
         public const int MAX_SELECTABLE_OBJECTS = 1;
         /// <summary>
-        /// Path to the storage asset in resources
-        /// </summary>
-        public const string RESOURCES_PATH = "Editor/CommentStorage";
-        /// <summary>
         /// Save path for resources
         /// </summary>
-        public const string SAVE_PATH = "Assets/VFlame/EditorComments/Editor/Resources/Editor";
+        public const string SAVE_PATH = "Assets/VFlame/EditorComments/Editor/Resources/Editor/Comments";
 
         /// <summary>
         /// The object holding the comments
@@ -48,20 +44,7 @@ namespace VFlame.EditorComments.Editor
 
         private void LoadStorage()
         {
-            if (storage != null)
-                return;
-
-            storage = Resources.Load<CommentStorage>(RESOURCES_PATH);
-
-            // If the comment storage did not successfully load, create a new asset.
-            if (storage == null)
-            {
-                AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<CommentStorage>(), SAVE_PATH + "/CommentStorage.asset");
-                storage = Resources.Load<CommentStorage>(RESOURCES_PATH);
-
-                EditorUtility.SetDirty(storage);
-                AssetDatabase.SaveAssets();
-            }
+            storage ??= new CommentStorage();
         }
 
         private void OnSelectionChange()

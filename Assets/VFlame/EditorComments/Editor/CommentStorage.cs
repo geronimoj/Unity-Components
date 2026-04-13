@@ -9,13 +9,12 @@ namespace VFlame.EditorComments.Editor
     /// <summary>
     /// Stores comments made
     /// </summary>
-    public class CommentStorage : ScriptableObject
+    public class CommentStorage
     {
         /// <summary>
         /// List of all comments on objects
         /// </summary>
-        [HideInInspector]
-        [SerializeField] CommentDictionary comments = null;
+        CommentDictionary comments = null;
 
         /// <summary>
         /// Saves any changes to a comment object
@@ -28,20 +27,35 @@ namespace VFlame.EditorComments.Editor
                 return null;
 
             GlobalObjectId id = GlobalObjectId.GetGlobalObjectIdSlow(obj);
+            string idString = id.ToString();
 
             // Search the comments for a comment for this object. Unfortunately, GlobalObjectId doesn't serialize so SerializableDictionaries don't work :(
-            if (comments != null && comments.TryGetValue(id.ToString(), out var comment))
+            if (comments != null && comments.TryGetValue(idString, out var comment))
             {
                 comment.isAsset = true;
                 return comment;
             }
 
-            var instance = CreateInstance<CommentObject>();
-            instance.name = "Comments_" + obj.name;
-            instance.objectId = id.ToString();
-            instance.isAsset = false;
+            // Compute the name so we don't need to re-compute it constantly.
+            string name = "Comments_" + idString;
 
-            return instance;
+            // Try load the asset from the project. If successful, store it in the dictionary
+            comment = AssetDatabase.LoadAssetAtPath<CommentObject>(CommentsEditorWindow.SAVE_PATH + "/" + name + ".asset");
+            if (comment)
+            {
+                // Store in dictionary before returning for faster accessing
+                comments ??= new CommentDictionary();
+                comments[comment.objectId] = comment;
+                comment.isAsset = true;
+                return comment;
+            }
+
+            comment = ScriptableObject.CreateInstance<CommentObject>();
+            comment.name = name;
+            comment.objectId = id.ToString();
+            comment.isAsset = false;
+
+            return comment;
         }
 
         /// <summary>
@@ -58,10 +72,7 @@ namespace VFlame.EditorComments.Editor
                 if (comment.isAsset)
                 {
                     comments.Remove(comment.objectId);
-                    AssetDatabase.RemoveObjectFromAsset(comment);
-
-                    EditorUtility.SetDirty(this);
-                    EditorUtility.SetDirty(comment);
+                    AssetDatabase.DeleteAsset(CommentsEditorWindow.SAVE_PATH + "/" + comment.name + ".asset");
                 }
 
                 return;
@@ -70,8 +81,7 @@ namespace VFlame.EditorComments.Editor
             // If this is not yet an asset, convert it to one.
             if (comment.isAsset == false)
             {
-                //AssetDatabase.CreateAsset(comment, CommentsEditorWindow.SAVE_PATH + "/" + comment.name + ".asset");
-                AssetDatabase.AddObjectToAsset(comment, CommentsEditorWindow.SAVE_PATH + "/CommentStorage.asset");
+                AssetDatabase.CreateAsset(comment, CommentsEditorWindow.SAVE_PATH + "/" + comment.name + ".asset");
                 comment.isAsset = true;
             }
 
@@ -79,125 +89,9 @@ namespace VFlame.EditorComments.Editor
             comments ??= new CommentDictionary();
             comments[comment.objectId] = comment;
 
-            EditorUtility.SetDirty(this);
             EditorUtility.SetDirty(comment);
         }
     }
 
-    /// <summary>
-    /// Serializable dictionary for comment storage
-    /// </summary>
-    [Serializable]
-    public class CommentDictionary : Dictionary<string, CommentObject>, ISerializationCallbackReceiver
-    {
-        [SerializeField] string[] objectIds;
-        [SerializeField] CommentObject[] comments;
-
-        public CommentDictionary()
-        {
-        }
-
-        public CommentDictionary(IDictionary<string, CommentObject> dict) : base(dict.Count)
-        {
-            foreach (var kvp in dict)
-            {
-                this[kvp.Key] = kvp.Value;
-            }
-        }
-
-        public Dictionary<string, CommentObject> GetSerializedData()
-        {
-            Dictionary<string, CommentObject> dict = null;
-            if (objectIds != null && comments != null && objectIds.Length == comments.Length)
-            {
-                dict = new Dictionary<string, CommentObject>();
-                int n = objectIds.Length;
-                for (int i = 0; i < n; ++i)
-                {
-                    dict.Add(objectIds[i], comments[i]);
-                }
-            }
-            else
-            {
-                OnBeforeSerialize();
-                dict = new Dictionary<string, CommentObject>(this);
-            }
-            return dict;
-        }
-
-        public void SetSerializedData(Dictionary<string, CommentObject> dict)
-        {
-            int n = dict.Count;
-            objectIds = new string[n];
-            comments = new CommentObject[n];
-            this.Clear();
-
-            int i = 0;
-            foreach (var kvp in dict)
-            {
-                objectIds[i] = kvp.Key;
-                comments[i] = kvp.Value;
-                this[objectIds[i]] = comments[i];
-                ++i;
-            }
-        }
-
-        public void CopyFrom(IDictionary<string, CommentObject> dict)
-        {
-            //Debug.Log("Copy From:" + this);
-            this.Clear();
-            foreach (var kvp in dict)
-            {
-                this[kvp.Key] = kvp.Value;
-            }
-        }
-
-        public void OnAfterDeserialize()
-        {
-            //Debug.Log("After Deser:" + this);
-            if (objectIds != null && comments != null && objectIds.Length == comments.Length)
-            {
-                this.Clear();
-                int n = objectIds.Length;
-                for (int i = 0; i < n; ++i)
-                {
-                    // Skip null keys to prevent ArgumentNullException
-                    if (objectIds[i] != null)
-                    {
-                        this[objectIds[i]] = comments[i];
-                    }
-                    else
-                    {
-                        Debug.LogError($"SerializableDictionary ({this.GetType().Name}) found null key at index {i} during deserialization. Value: {comments[i]}. Skipping entry.");
-                    }
-                }
-
-                objectIds = null;
-                comments = null;
-            }
-
-        }
-
-        public void OnBeforeSerialize()
-        {
-            //Debug.Log("Before Ser:" + this);
-            int n = this.Count;
-            objectIds = new string[n];
-            comments = new CommentObject[n];
-
-            int i = 0;
-            foreach (var kvp in this)
-            {
-                objectIds[i] = kvp.Key;
-                comments[i] = kvp.Value;
-#if UNITY_EDITOR
-                if (objectIds[i] == null || objectIds[i] is null)
-                {
-                    Debug.LogError($"SerializableDictionary ({this.GetType().Name}) found null key at index {i} during serialization.");
-                }
-#endif
-                ++i;
-            }
-        }
-    }
+    public class CommentDictionary : Dictionary<string, CommentObject> { }
 }
