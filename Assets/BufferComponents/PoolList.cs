@@ -59,6 +59,9 @@ public class PoolList<T> : List<T>
         // Don't know why you would want to do that, but just in case, Release() will put it in the pool.
         pool ??= new Stack<PoolList<T>>();
         pool.Push(this);
+
+        // Empty the list to avoid holding un-necessary data in memory.
+        Clear();
     }
 
     /// <summary>

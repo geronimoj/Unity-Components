@@ -44,6 +44,10 @@ public class PoolArray<T>
 
         pool ??= new List<T[]>(10);
         pool.Add(array);
+
+        // Clear the array so memory can be cleaned up
+        for (int i = 0; i < array.Length; i++)
+            array[i] = default;
     }
 
     /// <summary>

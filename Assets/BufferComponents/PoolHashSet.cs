@@ -57,6 +57,8 @@ public class PoolHashSet<T> : HashSet<T>
         // Don't know why you would want to do that, but just in case, Release() will put it in the pool.
         pool ??= new Stack<PoolHashSet<T>>();
         pool.Push(this);
+
+        Clear();
     }
 
     /// <summary>

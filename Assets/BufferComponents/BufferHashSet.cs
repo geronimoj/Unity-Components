@@ -42,6 +42,8 @@ public struct BufferHashSet<T> : IEnumerable<T>, IEnumerable
             BufferHashSet.buffer = new HashSet<object>(minCapacity);
         else
             BufferHashSet.buffer.EnsureCapacity(minCapacity);
+
+        BufferHashSet.buffer.Clear();
     }
 
     public readonly bool Add(T item) => BufferHashSet.buffer.Add(item);

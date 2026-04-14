@@ -51,6 +51,8 @@ public class PoolDictionary<TKey, TValue> : Dictionary<TKey, TValue>
         // Don't know why you would want to do that, but just in case, Release() will put it in the pool.
         pool ??= new Stack<PoolDictionary<TKey, TValue>>();
         pool.Push(this);
+
+        Clear();
     }
 
     /// <summary>

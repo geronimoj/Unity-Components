@@ -54,6 +54,8 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
         {
             BufferList.buffer.Capacity = minCapacity;
         }
+
+        BufferList.buffer.Clear();
     }
 
     public readonly T this[int index]

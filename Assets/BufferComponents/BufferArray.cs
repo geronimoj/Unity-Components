@@ -148,6 +148,7 @@ public struct BufferArray<T> : IEnumerable<T>, IEnumerable
             BufferArray.buffer = new object[minCapacity];
 
         buffer = new ArraySegment<object>(BufferArray.buffer, 0, minCapacity);
+        BufferArray.Clear(buffer);
     }
 
     /// <summary>

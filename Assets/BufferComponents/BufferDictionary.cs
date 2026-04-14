@@ -50,7 +50,7 @@ public struct BufferDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
     /// <summary>
     /// Deletes the buffer, releasing it to GC
     /// </summary>
-    public static void Dispose() => BufferList.Dispose();
+    public static void Dispose() => BufferDictionary.Dispose();
     #endregion
 
     public readonly TValue this[TKey key]
@@ -92,6 +92,7 @@ public struct BufferDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TV
         // Allocate the buffer if necessary & make sure it can fit the dictionary
         BufferDictionary.buffer ??= new Dictionary<object, object>(minCapacity);
         BufferDictionary.buffer.EnsureCapacity(minCapacity);
+        BufferDictionary.buffer.Clear();
     }
     /// <summary>
     /// Add an item to the dictionary
