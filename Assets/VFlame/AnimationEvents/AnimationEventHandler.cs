@@ -277,7 +277,7 @@ namespace VFlame.AnimationEvents
         /// Play an AnimationEventSFXParameter with variable weighting
         /// </summary>
         /// <param name="sfx"></param>
-        protected virtual void PlaySFX(AnimationEventSFXParameter sfx, float weight)
+        public virtual void PlaySFX(AnimationEventSFXParameter sfx, float weight)
         {
             // Don't waste time processing SFX if it's all muted.
             if (SfxMuted || sfx == null)
@@ -328,7 +328,7 @@ namespace VFlame.AnimationEvents
         /// Play an AnimationEventVFXParameter
         /// </summary>
         /// <param name="obj"></param>
-        protected virtual void PlayVFX(AnimationEventVFXParameter vfx, float weight)
+        public virtual void PlayVFX(AnimationEventVFXParameter vfx, float weight)
         {
             GameObject prefab = vfx.GetPrefab(this, weight);
 
@@ -376,8 +376,10 @@ namespace VFlame.AnimationEvents
         /// </summary>
         /// <param name="param"></param>
         /// <param name="weight"></param>
-        protected virtual void PlayEvent(AnimationEventParameter param, float weight)
+        public virtual void PlayEvent(AnimationEventParameter param, float weight)
         {
+            // To Do: I wonder if there is a more efficent method of doing this. Than attempting each cast 1 by 1.
+
             if (param is AnimationEventSFXParameter sfx)
             {
                 PlaySFX(sfx, weight);
@@ -390,6 +392,13 @@ namespace VFlame.AnimationEvents
                 return;
             }
 
+            if (param is AnimationEventMultiParameter multi)
+            {
+                multi.InvokeParameters(this, weight);
+                return;
+            }
+
+            // Failed to process the event type.
             Debug.LogError("[VFlame.AnimationEvent] Failed to execute Event! No Valid Case for Type!: " + param.name, gameObject);
         }
 
