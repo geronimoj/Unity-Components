@@ -13,19 +13,23 @@ namespace VFlame.AnimationEvents
         /// <summary>
         /// The Id of the spawn point
         /// </summary>
-        public string transformParentId;
+        [SerializeField]
+        protected string transformParentId;
         /// <summary>
         /// Should the event attach itself to the parent
         /// </summary>
-        public bool attachToParent;
+        [SerializeField]
+        protected bool attachToParent;
         /// <summary>
         /// The lifespan of the VFX event
         /// </summary>
-        public float lifespan;
+        [SerializeField]
+        protected float lifespan;
         /// <summary>
         /// The prefab for the VFX to spawn
         /// </summary>
-        public GameObject prefab;
+        [SerializeField]
+        protected GameObject prefab;
 
         /// <summary>
         /// Get the parent object to spawn the prefab at

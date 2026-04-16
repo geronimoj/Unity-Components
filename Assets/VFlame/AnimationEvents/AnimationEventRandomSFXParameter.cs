@@ -5,10 +5,10 @@ using UnityEngine;
 namespace VFlame.AnimationEvents
 {
     /// <summary>
-    /// Animation event parameter for SFX
+    /// Animation Event parameter for playing a random sfx
     /// </summary>
-    [CreateAssetMenu(fileName = "Event_NAME_SFX_Parameters", menuName = "VFlame/Animation/Events/SFX")]
-    public class AnimationEventSFXParameterScriptable : AnimationEventSFXParameter
+    [CreateAssetMenu(fileName = "Event_NAME_SFX_Parameters", menuName = "VFlame/Animation/Events/RandomSFX")]
+    public class AnimationEventRandomSFXParameter : AnimationEventSFXParameter
     {
         /// <summary>
         /// Unique Id of the audio source to play the SFX from
@@ -24,7 +24,7 @@ namespace VFlame.AnimationEvents
         /// The audio clip to play
         /// </summary>
         [SerializeField]
-        protected AudioClip clip;
+        protected AudioClip[] clips;
 
         /// <summary>
         /// Get the audio source to play the SFX from
@@ -55,7 +55,7 @@ namespace VFlame.AnimationEvents
         /// <returns></returns>
         public override AudioClip GetAudioClip(AnimationEventHandler handler, float weight)
         {
-            return clip;
+            return clips[Random.Range(0, clips.Length)];
         }
     }
 }
