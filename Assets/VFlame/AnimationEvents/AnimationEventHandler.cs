@@ -398,6 +398,21 @@ namespace VFlame.AnimationEvents
                 return;
             }
 
+            if (param is AnimationEventCustomParameter custom)
+            {
+                // Execute in try catch as this is a custom implementation. If it's one of mine, then I should fix it. If its theirs, I don't want
+                // the rest of the system dying because of it. I know mine won't error :)
+                try
+                {
+                    custom.Invoke(this, weight);
+                }
+                catch (Exception e)
+                {
+                    Debug.LogException(e);
+                }
+                return;
+            }
+
             // Failed to process the event type.
             Debug.LogError("[VFlame.AnimationEvent] Failed to execute Event! No Valid Case for Type!: " + param.name, gameObject);
         }
