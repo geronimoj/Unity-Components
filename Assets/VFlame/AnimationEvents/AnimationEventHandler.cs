@@ -69,6 +69,11 @@ namespace VFlame.AnimationEvents
         private float lastNormalizedTime = 0f;
 
         /// <summary>
+        /// Dictionary containing persistent data for persistent animation events
+        /// </summary>
+        PoolDictionary<object, PersistentParameterData> persistentParameterDatas;
+
+        /// <summary>
         /// The animator this event handler is targeting
         /// </summary>
         public Animator Animator => animator;
@@ -111,11 +116,37 @@ namespace VFlame.AnimationEvents
         }
 
         protected virtual void OnDisable()
-        {   
+        {
             // Object is disabled so we probably don't need to update the muted state of audiosources
             // since they are probably also disabled with us.
             // --- I'm sure some poor sole will have a super edge case where an audiosource keeps playing :)
             onMuteStateChanged -= RefreshMuteState;
+
+            // Run 0.0 weighting on all persistent events, so they can clean themself up in case
+            // they are working with systems that are not children of this object (or whatever parent that got turned off)
+            if (persistentParameterDatas != null)
+                foreach (var otherBlendedEventData in persistentParameterDatas)
+                {
+                    // The event is already processed this frame or has 0 weight already, don't re-process the event. (Or parameter is null which could happen from addressbles unloading)
+                    if (otherBlendedEventData.Value.lastWeight == 0.0f ||
+                        otherBlendedEventData.Value.parameter == null)
+                        continue;
+
+                    // Run update on the event with 0.0f weighting, so that the persistent event can clean itself up.
+                    otherBlendedEventData.Value.parameter.Update(this, otherBlendedEventData.Value, 0.0f);
+                    otherBlendedEventData.Value.lastWeight = 0.0f;
+                    // Don't bother updating lastUpdate frame, as we don't need it. It's only for internally tracking
+                    // which events updated in LateUpdate
+
+                    // We don't update the dictionary (since we are enumerating over it) & pray they didn't just return a NEW object.
+                }
+        }
+
+        protected virtual void OnDestroy()
+        {
+            // Release the dictionary back to the pool for re-use.
+            persistentParameterDatas?.Release();
+            persistentParameterDatas = null;
         }
 
         /// <summary>
@@ -145,7 +176,8 @@ namespace VFlame.AnimationEvents
             animator.GetCurrentAnimatorClipInfo(0, clipInfos);
 
             // Get a buffer object to store our data in as we enumerate over the clips
-            var buffer = BufferDictionary.Get<AnimationEventParameter, AnimationEventInfo>(5);
+            var persistentBuffer = BufferList.Get<PersistentEventInfo>(5);
+            var blendBuffer = BufferDictionary.Get<AnimationEventParameter, AnimationEventInfo>(5);
             float normalizedTime;
 
             // Go over all clips & calculate the blended normalized time for any identical animation events
@@ -153,21 +185,35 @@ namespace VFlame.AnimationEvents
                 foreach (var animationEvent in clipInfo.clip.events)
                 {
                     // Ignore non-parameters & not blended parameters
-                    if (animationEvent.objectReferenceParameter is not AnimationEventParameter param ||
-                        !param.isBlended)
+                    if (animationEvent.objectReferenceParameter is not AnimationEventParameter param)
                         continue;
+
+                    // If this event is not blended, don't bother processing the blending logic.
+                    if (!param.isBlended)
+                    {
+                        // If it's a persistent parameter, add it to the persistent buffer so we know to call update on it later
+                        if (param is AnimationEventPersistentParameter presistentParam)
+                            persistentBuffer.Add(new PersistentEventInfo(presistentParam, this, animationEvent));
+
+                        continue;
+                    }
 
                     // Compute the normalized time of the event (easier to work with)
                     normalizedTime = animationEvent.time / clipInfo.clip.length;
 
                     // Get the eventInfo from the buffer. Because AnimationEventInfo is a struct, a default object is exactly what we want if its not in there :D
-                    bool contains = buffer.TryGetValue(param, out var eventInfo);
+                    bool contains = blendBuffer.TryGetValue(param, out var eventInfo);
                     eventInfo.weight += clipInfo.weight;
 
                     if (!contains)
                     {   // First time this event has appeared, use this obejcts normalized time as the baseline for blending calculations.
                         eventInfo.startNormalizedTime = normalizedTime;
                         eventInfo.normalizedTime = normalizedTime;
+
+                        // If it's a persistent event, add it to the persistent buffer, using itself as a key. We only want to add it
+                        // to the buffer once, since this is blended so we do it in the !contains case.
+                        if (param is AnimationEventPersistentParameter presistentParam)
+                            persistentBuffer.Add(new PersistentEventInfo(presistentParam, this, animationEvent));
                     }
                     else
                     {
@@ -181,14 +227,14 @@ namespace VFlame.AnimationEvents
                     }
 
                     // Shove the updated struct back into the dictionary
-                    buffer[param] = eventInfo;
+                    blendBuffer[param] = eventInfo;
                 }
 
             // Re-use the normalizedTime property to track state normalized time.
             normalizedTime = stateInfo.normalizedTime % 1;
 
             // If we've got stuff in the buffer
-            if (buffer.Count > 0)
+            if (blendBuffer.Count > 0)
             {
                 // Create a range to represent the normalizedTime range that has passed. We have 2 pairs of min-max because if it wrapped around
                 // we will need a 0-now & prev-1 pair (or vice versa if speed is negative)
@@ -231,7 +277,7 @@ namespace VFlame.AnimationEvents
                 }
 
                 // Check if any events should play
-                foreach (var eventAndInfo in buffer)
+                foreach (var eventAndInfo in blendBuffer)
                 {
                     var time = eventAndInfo.Value.NormalizedTime;
 
@@ -239,17 +285,69 @@ namespace VFlame.AnimationEvents
                     if ((time > min1 && time <= max1) ||
                         (time > min2 && time <= max2))
                     {
+                        // Execute event normally. Persistent Parameters will be called through here but won't do anything because of PlayEvent handling.
                         PlayEvent(eventAndInfo.Key, eventAndInfo.Value.weight);
                     }
                 }
             }
+
+            // Obtain the currentFrame for the persistentBuffer calculations to avoid performing the getter a bunch. Micro optimizations people. Micro optimzations :)
+            int updateFrame = Time.frameCount;
+
+            // If we've got stuff in the persistent buffer (non-blended persistent events
+            if (persistentBuffer.Count > 0)
+            {
+                // Initialize the persistent data storage now that we actually need it.
+                persistentParameterDatas ??= PoolDictionary<object, PersistentParameterData>.Get(10);
+
+                // Process Update for active persistent parameters
+                foreach (var animEvent in persistentBuffer)
+                {
+                    // Obtain existing parameter data
+                    persistentParameterDatas.TryGetValue(animEvent.key, out PersistentParameterData paramData);
+
+                    // Get the weight for the event. If it's in the blendBuffer, then it must be blended & return the blended weight. Otherwise default to 1f
+                    float weight = blendBuffer.TryGetValue(animEvent.parameter, out var eventInfo) ? eventInfo.weight : 1f;
+
+                    // Execute the event
+                    paramData = animEvent.parameter.Update(this, paramData, weight);
+
+                    // Update the previous frame data in the parameter data
+                    paramData ??= new PersistentParameterData();
+                    paramData.parameter = animEvent.parameter;
+                    paramData.lastWeight = weight;
+                    paramData.lastUpdate = updateFrame;
+
+                    // Keep the param data up to date
+                    persistentParameterDatas[animEvent.key] = paramData;
+                }
+            }
+
+            // If we have persistent parameters, check for any that updated last frame, but not this frame, and execute them with 0.0 weight.
+            if (persistentParameterDatas != null)
+                foreach (var otherBlendedEventData in persistentParameterDatas)
+                {
+                    // The event is already processed this frame or has 0 weight already, don't re-process the event. (Or parameter is null which could happen from addressbles unloading)
+                    if (otherBlendedEventData.Value.lastUpdate == updateFrame ||
+                        otherBlendedEventData.Value.lastWeight == 0.0f ||
+                        otherBlendedEventData.Value.parameter == null)
+                        continue;
+
+                    // Run update on the event with 0.0f weighting, so that the persistent event can clean itself up.
+                    otherBlendedEventData.Value.parameter.Update(this, otherBlendedEventData.Value, 0.0f);
+                    otherBlendedEventData.Value.lastWeight = 0.0f;
+                    otherBlendedEventData.Value.lastUpdate = updateFrame;
+
+                    // We don't update the dictionary (since we are enumerating over it) & pray they didn't just return a NEW object.
+                }
 
             // Update last cycles normalized time so we can keep track of event changes.
             lastNormalizedTime = normalizedTime;
 
             // Done with our pooled data, free them for other systems to use
             clipInfos.Release();
-            buffer.Clear();
+            blendBuffer.Clear();
+            persistentBuffer.Clear();
         }
 
         /// <summary>
@@ -413,6 +511,13 @@ namespace VFlame.AnimationEvents
                 return;
             }
 
+            // Persistent parameters are executed elsewhere. They don't directly execute from an event. This is just handling to avoid throwing
+            // errors when using them.
+            if (param is AnimationEventPersistentParameter)
+            {
+                return;
+            }
+
             // Failed to process the event type.
             Debug.LogError("[VFlame.AnimationEvent] Failed to execute Event! No Valid Case for Type!: " + param.name, gameObject);
         }
@@ -450,6 +555,27 @@ namespace VFlame.AnimationEvents
                     else
                         return normalizedTime;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Stores information about Persistent Animation Events we need to execute on a given frame.
+        /// </summary>
+        public struct PersistentEventInfo
+        {
+            /// <summary>
+            /// The key to get & save persistent data with
+            /// </summary>
+            public readonly object key;
+            /// <summary>
+            /// The parameter to run
+            /// </summary>
+            public AnimationEventPersistentParameter parameter;
+
+            public PersistentEventInfo(AnimationEventPersistentParameter parameter, AnimationEventHandler handler, AnimationEvent animationEvent)
+            {
+                this.parameter = parameter;
+                this.key = parameter.GetUniqueKey(handler, animationEvent);
             }
         }
     }
