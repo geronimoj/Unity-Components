@@ -291,22 +291,24 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
         return ret;
     }
 
-    readonly IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    public IEnumerator<T> GetEnumerator()
     {
         return new Enumerator();
     }
 
-    public readonly IEnumerator GetEnumerator()
+    IEnumerator IEnumerable.GetEnumerator()
     {
         return GetEnumerator();
     }
 
-    public struct Enumerator : IEnumerator<T>
+    public struct Enumerator : IEnumerator<T>, IEnumerator, IDisposable
     {
-        /// <summary>
-        /// The index the enumerator is currently at
-        /// </summary>
-        int index;
+        List<object>.Enumerator enumerator;
+
+        public Enumerator(List<object>.Enumerator enumerator)
+        {
+            this.enumerator = enumerator;
+        }
 
         /// <summary>
         /// The current object the enumeartor is targeting
@@ -314,11 +316,8 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
         public T Current
         {
             get
-            {   // If invalid buffer or buffer is out of range
-                if (BufferList.buffer == null || index >= BufferList.buffer.Count)
-                    return default;
-
-                return (T)BufferList.buffer[index];
+            {
+                return (T)enumerator.Current;
             }
         }
 
@@ -326,23 +325,18 @@ public struct BufferList<T> : IEnumerable<T>, IEnumerable
 
         public void Dispose()
         {
-            index = -1;
+            enumerator.Dispose();
+            enumerator = default;
         }
 
         public bool MoveNext()
-        {   // Buffer is empty
-            if (BufferList.buffer == null ||
-                index == -1)
-                return false;
-
-            index++;
-            return index < BufferList.buffer.Count;
+        {
+            return enumerator.MoveNext();
         }
 
         public void Reset()
         {
-            index = 0;
+            ((IEnumerator)enumerator).Reset();
         }
-
     }
 }
