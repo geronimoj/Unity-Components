@@ -22,7 +22,10 @@ public class PoolArray<T>
         foreach(var array in pool)
         {
             if (array.Length >= capacity)
+            {
+                pool.Remove(array);
                 return new ArraySegment<T>(array, 0, capacity);
+            }
         }
 
         // Failed to find an existing array in the pool to fit the contents, create a new array
