@@ -15,7 +15,7 @@ public class TempList<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// static list of all active temp list references to avoid the PoolLists going to GC & getting resurrected.
     /// </summary>
-    static List<PoolList<T>> softReferences = null;
+    static List<object> softReferences = null;
 
     /// <summary>
     /// Internal pool list to act as the actual list the logic is interacting with.
@@ -27,7 +27,7 @@ public class TempList<T> : IEnumerable<T>, IEnumerable
         list = PoolList<T>.Get(capacity);
 
         // Add the list to the softReferences to protected it from resurrection during the TempList destructor.
-        softReferences ??= new List<PoolList<T>>(10);
+        softReferences ??= new List<object>(10);
         softReferences.Add(list);
     }
 

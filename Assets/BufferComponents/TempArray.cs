@@ -8,13 +8,14 @@ public class TempArray<T> : IEnumerable<T>, IEnumerable
     /// <summary>
     /// static list of all active temp list references to avoid the PoolLists going to GC & getting resurrected.
     /// </summary>
-    static List<T[]> softReferences = null;
+    static List<object> softReferences = null;
 
     readonly ArraySegment<T> segment;
 
     public TempArray(int length)
     {
         segment = PoolArray<T>.Get(length);
+        softReferences ??= new List<object>(10);
         softReferences.Add(segment.Array);
     }
 
