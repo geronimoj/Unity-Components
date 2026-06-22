@@ -98,7 +98,7 @@ public struct BufferHashSet<T> : IEnumerable<T>, IEnumerable
 
     public IEnumerator<T> GetEnumerator()
     {
-        throw new NotImplementedException();
+        return new Enumerator(BufferHashSet.buffer);
     }
 
     IEnumerator IEnumerable.GetEnumerator()
