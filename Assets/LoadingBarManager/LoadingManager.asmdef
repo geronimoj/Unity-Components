@@ -1,7 +1,8 @@
 {
     "name": "LoadingManager",
+    "rootNamespace": "",
     "references": [
-        "GUID:4f2206f91eae0d347b24f0af2614656d"
+        "GUID:9d204b9300c6db44f9f03da069ee18d3"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
