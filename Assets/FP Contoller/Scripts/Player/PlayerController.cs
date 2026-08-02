@@ -524,6 +524,7 @@ public class PlayerController : CustomController.PlayerController
     private void Awake()
     {
         stateManager = GetComponent<PlayerStateMachine>();
+        stateManager.Initialize(this);
 #if UNITY_STANDALONE_WIN
         Cursor.lockState = CursorLockMode.Locked;
         sensitivity *= 10;
@@ -557,9 +558,8 @@ public class PlayerController : CustomController.PlayerController
 
         if (stateManager != null)
         {
-            PlayerController @this = this;
             //Calls the current state
-            stateManager.DoState(ref @this);
+            stateManager.ProcessUpdate();
         }
     }
     /// <summary>

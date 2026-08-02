@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.Transitions;
+using StateMachine.States;
 
 /// <summary>
 /// Checks if the Quick Turn input was recently pressed
@@ -14,7 +15,7 @@ public class QuickTurn : Transition<PlayerController>
     /// </summary>
     /// <param name="ctrl"> A reference to the player controller </param>
     /// <returns>Returns true when the Quick Turn input was pressed and if checkDir is not 0</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
     {   //Did the player press Q and had a checkDir and this is a new input
 #if UNITY_STANDALONE_WIN
         if (InputManager.NewInput("Quick Turn") != 0 && ctrl.CheckDir != Vector3.zero)
@@ -25,6 +26,6 @@ public class QuickTurn : Transition<PlayerController>
             //Rotate the player
             ctrl.ForceRotate((Mathf.Atan2(-ctrl.CheckDir.x, -ctrl.CheckDir.z) * Mathf.Rad2Deg) % 360);
         //Return false because we don't ever want to transition using this transition
-        return false;
+        return (false, null);
     }
 }

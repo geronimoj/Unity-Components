@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.Transitions;
+using StateMachine.States;
 
 /// <summary>
 /// Checks if we should transition into a wall climb
@@ -14,7 +15,7 @@ public class DoWallClimb : Transition<PlayerController>
     /// </summary>
     /// <param name="ctrl">A refernece the player player controller</param>
     /// <returns>Returns true if the player is moving upwards, towards a wall and is close enough</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
     {
         //Make sure the player has vertical speed left
         if (ctrl.VertSpeed > 0
@@ -33,9 +34,9 @@ public class DoWallClimb : Transition<PlayerController>
             Vector3 v = -hit.normal;
             v.y = 0;
             ctrl.CheckDir = v;
-            return true;
+            return (true, targetState);
         }
 
-        return false;
+        return (false, null);
     }
 }

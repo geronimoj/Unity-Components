@@ -1,22 +1,23 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using StateMachine.States;
 using StateMachine.Transitions;
 /// <summary>
 /// Checks if the player can grab a ledge
 /// </summary>
 [CreateAssetMenu(fileName = "AtLedge", menuName = "Transitions/AtLedge", order = 6)]
 public class AtLedge : Transition<PlayerController>
-{   
+{
     /// <summary>
     /// Checks if the player is close enough to a ledge to grab it
     /// </summary>
     /// <param name="ctrl">A reference to the player controller</param>
     /// <returns>Returns false if the Crouch input is not 0</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
     {
         if (InputManager.GetInput("Crouch") != 0)
-            return false;
+            return (false, null);
 
         Vector3 checkDir;
         //If checkDir is not assigned a direction, use the players transform.forward
@@ -51,13 +52,13 @@ public class AtLedge : Transition<PlayerController>
             move.x = hit.point.x;
             move.z = hit.point.z;
             //Calculate the positions horizontal position
-            move -= ctrl.CheckDir *  ctrl.colInfo.TrueRadius;
+            move -= ctrl.CheckDir * ctrl.colInfo.TrueRadius;
             //Move the player to the destination
             ctrl.Move(move - ctrl.transform.position);
 
-            return true;
+            return (true, targetState);
         }
-        return false;
+        return (false, null);
     }
     /// <summary>
     /// Sets the location that defines the top of the player, this is the hieght the majority of the checks start from

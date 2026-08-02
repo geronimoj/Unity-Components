@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.Transitions;
+using StateMachine.States;
 
 /// <summary>
 /// Checks if the player wants to jump
@@ -18,7 +19,7 @@ public class DidJump : Transition<PlayerController>
     /// </summary>
     /// <param name="ctrl">A reference to the player controller</param>
     /// <returns>Returns true when the player presses the space bar</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
     {   //Did the player press jump & is this a new input
         if (InputManager.NewInput("Jump") != 0 || ctrl.ForceJump)
         {   //Reset ForceJump so we don't, ya know, keep jumping
@@ -31,8 +32,8 @@ public class DidJump : Transition<PlayerController>
             //Set the jump force
             ctrl.VertSpeed = ctrl.JumpForce;
             Debug.Log("Jump");
-            return true;
+            return (true, targetState);
         }
-        return false;
+        return (false, null);
     }
 }

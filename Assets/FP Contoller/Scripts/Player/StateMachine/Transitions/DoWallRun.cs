@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.Transitions;
+using StateMachine.States;
 
 /// <summary>
 /// A transition to represent if the player should enter a wall run
@@ -14,8 +15,8 @@ public class DoWallRun : Transition<PlayerController>
     /// </summary>
     /// <param name="ctrl">A reference to the player controller</param>
     /// <returns>Returns true if either of two raycasts outwards returns a hit and the player is looking parallel to the wall</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
-    {   
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
+    {
         bool foundWall = false;
         Vector3 rayOffset = new Vector3(ctrl.Direction.z, 0, -ctrl.Direction.x) * ctrl.colInfo.Radius;
         Vector3 forward = ctrl.Direction;
@@ -52,9 +53,9 @@ public class DoWallRun : Transition<PlayerController>
             Debug.Log("Wall Run");
             ctrl.CheckDir = -hit.normal;
             ctrl.CheckDirRange = Vector3.Distance(ctrl.transform.position, hit.point);
-            return true;
+            return (true, targetState);
         }
 
-        return false;
+        return (false, null);
     }
 }

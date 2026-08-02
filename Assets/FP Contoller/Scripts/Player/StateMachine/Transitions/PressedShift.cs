@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.Transitions;
+using StateMachine.States;
 
 /// <summary>
 /// Checks if the Crouch input was recently pressed
@@ -14,10 +15,10 @@ public class PressedShift : Transition<PlayerController>
     /// </summary>
     /// <param name="ctrl">A reference to the player controller</param>
     /// <returns>Returns true when a new Crouch input was made</returns>
-    public override bool ShouldTransition(ref PlayerController ctrl)
+    public override (bool ShouldTransition, IState<PlayerController> TargetState) ShouldTransition(PlayerController ctrl)
     {
         if (InputManager.NewInput("Crouch") != 0)
-            return true;
-        return false;
+            return (true, targetState);
+        return (false, null);
     }
 }
