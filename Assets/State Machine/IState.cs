@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using StateMachine.Transitions;
 
 namespace StateMachine.States
 {
@@ -65,5 +65,9 @@ namespace StateMachine.States
         /// </summary>
         /// <param name="target"></param>
         public void OnExit(T target) { }
+    }
+
+    public static class InstancedStateDictionary
+    {
     }
 }

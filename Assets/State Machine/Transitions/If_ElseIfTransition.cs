@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using StateMachine.States;
+using System.Collections.Generic;
 
 namespace StateMachine.Transitions
 {
@@ -22,25 +23,24 @@ namespace StateMachine.Transitions
         [Tooltip("The state to swap to if the second condition passes")]
         private State<T> _elseIfState = null;
 
-        public override bool ShouldTransition(ref T ctrl)
-        {   //Perform any universal checks that both IfCondition and elseIfCondition may want
-            if (!UniversalChecks(ref ctrl))
-                return false;
+        public override (bool ShouldTransition, IState<T> TargetState) ShouldTransition(T target)
+        {//Perform any universal checks that both IfCondition and elseIfCondition may want
+            if (!UniversalChecks(ref target))
+                return (false, null);
             //Check if condition
-            if (IfCondition(ref ctrl))
+            if (IfCondition(ref target))
             {
-                targetState = _ifState;
-                return true;
+                return (true, _ifState);
             }
             //Check elseIf condition
-            else if (IfElseCondition(ref ctrl))
+            else if (IfElseCondition(ref target))
             {
-                targetState = _elseIfState;
-                return true;
+                return (true, _elseIfState);
             }
             //Return false
-            return false;
+            return (false, null);
         }
+
         /// <summary>
         /// Perform any checks / changes necessary before the other conditions get called
         /// </summary>
@@ -60,16 +60,16 @@ namespace StateMachine.Transitions
         /// <param name="c">A reference to the player controller</param>
         /// <returns>Returns true if the condition is met</returns>
         protected abstract bool IfElseCondition(ref T c);
-        /// <summary>
-        /// Clones the IF state & ELSE IF state
-        /// </summary>
-        /// <param name="cloneInstance"></param>
-        protected override void InternalClone(Transition<T> cloneInstance)
-        {   //Clone the If else states
-            If_ElseIfTransition<T> _this = (If_ElseIfTransition<T>)cloneInstance;
 
-            _this._ifState = _ifState.Clone();
-            _this._elseIfState = _elseIfState.Clone();
+        public override ITransition<T> Initialize(T target, Dictionary<IState<T>, IState<T>> instancedStates, Dictionary<ITransition<T>, ITransition<T>> instancedTransitions)
+        {
+            var newInstance = (If_ElseIfTransition<T>)base.Initialize(target, instancedStates, instancedTransitions);
+
+            // Make sure other target states are instanced
+            newInstance._ifState = (State<T>)StateManager<T>.GetOrCreateInstance(target, _ifState, instancedStates, instancedTransitions);
+            newInstance._elseIfState = (State<T>)StateManager<T>.GetOrCreateInstance(target, _elseIfState, instancedStates, instancedTransitions);
+
+            return newInstance;
         }
     }
 }

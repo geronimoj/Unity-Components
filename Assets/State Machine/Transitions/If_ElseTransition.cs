@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using StateMachine.States;
+using System.Collections.Generic;
 
 namespace StateMachine.Transitions
 {
@@ -21,14 +22,13 @@ namespace StateMachine.Transitions
         [SerializeField]
         [Tooltip("The state that will be swaped to if the condition fails")]
         private State<T> _elseState = null;
-        public override bool ShouldTransition(ref T ctrl)
-        {   //Check the condition
-            if (Condition(ref ctrl))
-                targetState = _ifState;
-            else
-                targetState = _elseState;
 
-            return true;
+        public override (bool ShouldTransition, IState<T> TargetState) ShouldTransition(T target)
+        {   //Check the condition
+            if (Condition(ref target))
+                return (true, _ifState);
+            else
+                return (true, _elseState);
         }
         /// <summary>
         /// Checks if the if State should be transitioned to
@@ -36,16 +36,16 @@ namespace StateMachine.Transitions
         /// <param name="ctrl">Reference to the object</param>
         /// <returns>Returns true if the ifState should be returned to</returns>
         protected abstract bool Condition(ref T ctrl);
-        /// <summary>
-        /// Clones the IF state & ELSE state
-        /// </summary>
-        /// <param name="cloneInstance"></param>
-        protected override void InternalClone(Transition<T> cloneInstance)
-        {   //Clone the If else states
-            If_ElseTransition<T> _this = (If_ElseTransition<T>)cloneInstance;
 
-            _this._ifState = _ifState.Clone();
-            _this._elseState = _elseState.Clone();
+        public override ITransition<T> Initialize(T target, Dictionary<IState<T>, IState<T>> instancedStates, Dictionary<ITransition<T>, ITransition<T>> instancedTransitions)
+        {
+            var newInstance = (If_ElseTransition< T>)base.Initialize(target, instancedStates, instancedTransitions);
+
+            // Make sure other target states are instanced
+            newInstance._ifState = (State<T>)StateManager<T>.GetOrCreateInstance(target, _ifState, instancedStates, instancedTransitions);
+            newInstance._elseState = (State<T>)StateManager<T>.GetOrCreateInstance(target, _elseState, instancedStates, instancedTransitions);
+
+            return newInstance;
         }
     }
 }

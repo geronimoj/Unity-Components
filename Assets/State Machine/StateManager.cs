@@ -1,245 +1,179 @@
-﻿using System.Collections.Generic;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using StateMachine.States;
 using StateMachine.Transitions;
+using System;
 
 namespace StateMachine
 {
-    /// <summary>
-    /// Manages the states. Checks for transitions, swaps between states & calls update on the current state.
-    /// State Update, FixedUpdate and Late Update have to be manually called by calling DoState, DoFixedUpdate and DoLateUpdate but
-    /// this can be automated by defining AUTO_STATE_MACHINE but it will required _target to be assigned through SetTarget
-    /// </summary>
-    public class StateManager<T> : MonoBehaviour
+    public class StateManager<T>
     {
-#if PREVIOUS_STATE_MACHINE
         /// <summary>
-        /// A reference to the previous state in case we want to return to it
+        /// The StateManagers target object
         /// </summary>
-        [SerializeField]
-        [Tooltip("The previous state. For help debugging.")]
-        private State<T> _previous = null;
-        /// <summary>
-        /// Reference to the previous active state
-        /// </summary>
-        public State<T> Previous => _previous;
-#endif
-        /// <summary>
-        /// To clone the current state before first execution
-        /// </summary>
-        [SerializeField]
-        [Tooltip("To clone the current state & transitions (and their states, etc) before its first execution")]
-        private bool cloneBeforeExecution = false;
-        /// <summary>
-        /// The current state
-        /// </summary>
-        [SerializeField]
-        private State<T> _current = null;
-        /// <summary>
-        /// The current state
-        /// </summary>
-        public State<T> Current => _current;
-        /// <summary>
-        /// The state we want to swap to. This is only public for debugging purposes
-        /// </summary>
-        [SerializeField]
-        private State<T> _target = null;
-        /// <summary>
-        /// These transitions will always be checked reguardless as to what state we are currently in
-        /// </summary>
-        public Transition<T>[] globalTransitions = new Transition<T>[0];
+        public T Target { get; private set; }
 
-#if AUTO_STATE_MACHINE
         /// <summary>
-        /// The target for this state machine.
+        /// The Current State
         /// </summary>
-        [SerializeField]
-        private T _targetObj = default;
-#endif
+        public IState<T> CurrentState { get; private set; }
+
         /// <summary>
-        /// Checks the transitions, swaps the current state if any return true.
-        /// Then updates the current state if we have one
+        /// An enumerable collection of transitions that apply to all states (processed before State transitions)
         /// </summary>
-        public void DoState(ref T obj)
-        {   //Don't do anything if we don't have a reference to the controller
-            if (EqualityComparer<T>.Default.Equals(obj, default))
-                return;
-            //Represents the start function
-            if (_current == null && _target != null)
+        public IEnumerable<ITransition<T>> AnyStateTransitions { get; set; }
+
+        /// <summary>
+        /// Callback made after the state changes (Old State, New State)
+        /// </summary>
+        public event Action<IState<T>, IState<T>> OnStateChanged
+        {
+            add
             {
-                _current = _target;
-
-                if (cloneBeforeExecution)
-                    CloneStatesAndTransitions();
-
-                _current.State_Start(ref obj);
+                onStateChanged += value;
             }
-            //Make sure we have a state we can call
-            if (_current != null)
+            remove
             {
-                //Do we need to make a global transition                    //Do we need to make a transition out of the current state
-                if (CheckTransitions(ref obj, ref globalTransitions, null) || CheckTransitions(ref obj, ref _current.transitions, _current.ignoreTransition))
-                    //Swap the states
-                    SwapStates(ref obj);
-                //Call update on our current state
-                _current.State_Update(ref obj);
-            }
-        }
-        /// <summary>
-        /// Performs the fixed update loop for the State. Also checks transitions if FIXED_CHECK_TRANSITIONS is defined
-        /// </summary>
-        /// <param name="obj">A reference to the object</param>
-        public void DoFixedUpdate(ref T obj)
-        {   //Null catch/default catch. This is kind of redundant for structs but its necessary to avoid having to default/null catch in every state
-            if (EqualityComparer<T>.Default.Equals(obj, default))
-                return;
-            //Null catch again
-            if (_current != null)
-            {   //Defines woo
-#if FIXED_CHECK_TRANSITIONS
-                //Do we need to make a global transition                    //Do we need to make a transition out of the current state
-                if (CheckTransitions(ref ctrl, ref globalTransitions, null) || CheckTransitions(ref ctrl, ref current.transitions, current.ignoreTransition))
-                    //Swap the states
-                    SwapStates(ref ctrl);
-#endif
-                //Call the fixed update
-                _current.State_Fixed(ref obj);
-            }
-        }
-        /// <summary>
-        /// Performs the late update loop for the State. Also checks transitions if LATE_CHECK_TRANSITIONS is defined
-        /// </summary>
-        /// <param name="obj">A reference to the object</param>
-        public void DoLateUpdate(ref T obj)
-        {   //Null catch/default catch. This is kind of redundant for structs but its necessary to avoid having to default/null catch in every state
-            if (EqualityComparer<T>.Default.Equals(obj, default))
-                return;
-            //Null catch again
-            if (_current != null)
-            {   //Defines woo
-#if LATE_CHECK_TRANSITIONS
-                //Do we need to make a global transition                    //Do we need to make a transition out of the current state
-                if (CheckTransitions(ref ctrl, ref globalTransitions, null) || CheckTransitions(ref ctrl, ref current.transitions, current.ignoreTransition))
-                    //Swap the states
-                    SwapStates(ref ctrl);
-#endif
-                //Call the fixed update
-                _current.State_Late(ref obj);
+                onStateChanged -= value;
             }
         }
 
-#if AUTO_STATE_MACHINE
         /// <summary>
-        /// Sets the target for the State Machine
+        /// Callback made after the state changes (Old State, New State)
         /// </summary>
-        /// <param name="target">The target object</param>
-        public void SetTarget(T target)
-        {   //Set the target
-            _targetObj = target;
-        }
+        protected Action<IState<T>, IState<T>> onStateChanged;
 
-        private void Update()
-        {   //Automatically call the state
-            DoState(ref _targetObj);
-        }
-
-        private void FixedUpdate()
-        {   //Automatically call the state
-            DoFixedUpdate(ref _targetObj);
-        }
-
-        private void LateUpdate()
-        {   //Automatically call the state
-            DoLateUpdate(ref _targetObj);
-        }
-#endif
         /// <summary>
-        /// Checks the transitions
+        /// Initialize the StateManager
         /// </summary>
-        /// <param name="ctrl">A reference to the player controller</param>
-        /// <param name="trans">The transitions that should be checked</param>
-        /// <returns>Returns true on the first transition to return true</returns>
-        bool CheckTransitions(ref T ctrl, ref Transition<T>[] trans, bool[] ignore)
-        {   //Make sure we have transitions to check
-            if (trans == null)
+        /// <param name="obj"></param>
+        /// <param name="initialState"></param>
+        public virtual void Initialize(T obj, IState<T> initialState)
+        {
+            Target = obj;
+            SetState(initialState);
+        }
+
+        /// <summary>
+        /// Change the target of the state manager
+        /// </summary>
+        /// <param name="obj"></param>
+        public virtual void SetTarget(T obj)
+        {
+            Target = obj;
+        }
+
+        /// <summary>
+        /// Set the current state to a specific state
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="newState"></param>
+        public void SetState(IState<T> newState)
+        {
+            // If the target state is not initialized, initialize it before transitioning
+            if (!newState.IsInitialized)
+            {
+                // Allocate pool dictionaries for tracking asset -> instanced states (in case users use ScriptableObjects or Templates)
+                PoolDictionary<IState<T>, IState<T>> instancedStates = PoolDictionary<IState<T>, IState<T>>.Get(30);
+                PoolDictionary<ITransition<T>, ITransition<T>> instancedTransitions = PoolDictionary<ITransition<T>, ITransition<T>>.Get(30);
+
+                // Initialize the newState, passing in the temporary dictionaries to help with instancing.
+                newState = newState.Initialize(Target, instancedStates, instancedTransitions);
+
+                // Release the dictionaries back to the pool so they can be re-used
+                instancedStates.Release();
+                instancedTransitions.Release();
+            }
+
+            var oldState = CurrentState;
+
+            // Swap the states around
+            CurrentState?.OnExit(Target);
+            CurrentState = newState;
+            CurrentState?.OnEnter(Target);
+
+            // Invoke the state changed callback
+            onStateChanged.SafeInvoke(oldState, newState);
+        }
+
+        /// <summary>
+        /// Process the transitions for the current state
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public bool ProcessTransitions()
+        {
+            // Process the any state transitions, then current state.
+            // If any of the AnyStateTransitions are applied, it won't process CurrentState due to order of operations.
+            return Process(AnyStateTransitions) || Process(CurrentState?.GetTransitions());
+
+            bool Process(IEnumerable<ITransition<T>> transitions)
+            {
+                // Process the transitions, the first one to return true will be transitioned too
+                if (transitions != null)
+                    foreach (var transition in transitions)
+                    {
+                        (bool changeState, IState<T> target) = transition.ShouldTransition(Target);
+
+                        // If this state has changed, swap the current state.
+                        if (changeState)
+                        {
+                            SetState(target);
+                            return true;
+                        }
+                    }
+
                 return false;
-            for (int i = 0; i < trans.Length; i++)
-            {   //Should this transition be ignored
-                if (ignore != null && i < ignore.Length)
-                    if (ignore[i])
-                        continue;
-                //Should we transition
-                if (trans[i].ShouldTransition(ref ctrl))
-                {
-                    //Swap target and return true
-                    _target = trans[i].targetState;
-                    return true;
-                }
             }
-            //No transitions passed
-            return false;
-        }
-        /// <summary>
-        /// Swaps target state to current state
-        /// </summary>
-        /// <param name="obj">A reference to the object</param>
-        void SwapStates(ref T obj)
-        {   //Make sure we have a valid controller
-            if (EqualityComparer<T>.Default.Equals(obj, default) || _target == _current || _target == null)
-                return;
-            //Call end on our current state
-            _current.State_End(ref obj);
-            //Swap our states around
-#if PREVIOUS_STATE_MACHINE
-            _previous = _current;
-#endif
-            _current = _target;
-            _target = null;
-            //call state on our new state
-            _current.State_Start(ref obj);
-        }
-        /// <summary>
-        /// Forces the state to swap to the specified state immediately
-        /// </summary>
-        /// <param name="obj">A reference to the object</param>
-        /// <param name="targetState">The target state</param>
-        public void ForceSwapStates(ref T obj, State<T> targetState)
-        {   //Set the target
-            _target = targetState;
-            //Swap the state
-            SwapStates(ref obj);
         }
 
-        #region Cloning
-        /// <summary>
-        /// Temporary storage for cloned states to avoid re-cloning the same state
-        /// </summary>
-        internal static Dictionary<State<T>, State<T>> temp_clonedStated = null;
-        /// <summary>
-        /// Temporary storage for cloned transitions to avoid re-cloning the same transition
-        /// </summary>
-        internal static Dictionary<Transition<T>, Transition<T>> temp_clonedTransitions = null;
-        /// <summary>
-        /// Clones the currently used states & transitions then starts using them.
-        /// </summary>
-        public void CloneStatesAndTransitions()
-        {   //Must contain current
-            if (!_current)
-                return;
-            //Allocate storage for tracking cloned states (only needed temporary but the states & transitions need access to them.
-            temp_clonedStated = new Dictionary<State<T>, State<T>>();
-            temp_clonedTransitions = new Dictionary<Transition<T>, Transition<T>>();
-
-            //Clone current state
-            _current = _current.Clone();
-            //Clone global transitions
-            for(int i =0; i < globalTransitions.Length; i++)
-                globalTransitions[i] = globalTransitions[i].Clone();
-
-            //Clear lists as no-longer needed
-            temp_clonedStated = null;
-            temp_clonedTransitions = null;
+        public virtual void ProcessUpdate()
+        {
+            CurrentState?.OnUpdate(Target);
         }
-        #endregion
+
+        public virtual void ProcessFixedUpdate()
+        {
+            CurrentState?.OnFixedUpdate(Target);
+        }
+
+        public virtual void ProcessLateUpdate()
+        {
+            CurrentState?.OnLateUpdate(Target);
+        }
+
+        public static IState<T> GetOrCreateInstance(T target, IState<T> targetState, Dictionary<IState<T>, IState<T>> instancedStates, Dictionary<ITransition<T>, ITransition<T>> instancedTransitions)
+        {
+            // If null or already initailized, don't waste time on gets, just return the initailized state
+            if (targetState == null || targetState.IsInitialized)
+                return targetState;
+
+            // If the target state is already instanced, grab it from the instanced list.
+            if (instancedStates.TryGetValue(targetState, out var newTarget))
+            {
+                return newTarget;
+            }
+            else
+            {   // Otherwise Initialize a new instance
+                return targetState.Initialize(target, instancedStates, instancedTransitions);
+            }
+        }
+        public static ITransition<T> GetOrCreateInstance(T target, ITransition<T> targetTransition, Dictionary<IState<T>, IState<T>> instancedStates, Dictionary<ITransition<T>, ITransition<T>> instancedTransitions)
+        {
+            // If null or already initailized, don't waste time on gets, just return the initailized transition
+            if (targetTransition == null || targetTransition.IsInitialized)
+                return targetTransition;
+
+            // If the target transition is already instanced, grab it from the instanced list.
+            if (instancedTransitions.TryGetValue(targetTransition, out var newTarget))
+            {
+                return newTarget;
+            }
+            else
+            {   // Otherwise Initialize a new instance
+                return targetTransition.Initialize(target, instancedStates, instancedTransitions);
+            }
+        }
     }
 }

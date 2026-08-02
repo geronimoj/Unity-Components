@@ -1,13 +1,14 @@
 ﻿using System;
 using UnityEngine;
 using StateMachine.Transitions;
+using System.Collections.Generic;
 
 namespace StateMachine.States
 {
     /// <summary>
     /// The base class for all the states
     /// </summary>
-    public abstract class State<T> : ScriptableObject
+    public abstract class State<T> : ScriptableObject, IState<T>
     {   /// <summary>
         /// The transitions this state should check
         /// </summary>
@@ -25,49 +26,57 @@ namespace StateMachine.States
         [HideInInspector]
         internal bool[] ignoreTransition;
         /// <summary>
+        /// The list of currently active transitions
+        /// </summary>
+        List<Transition<T>> activeTransitions = null;
+
+        bool instanced = false;
+        public bool IsInitialized => instanced;
+
+        /// <summary>
         /// The initial Start call. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        internal void State_Start(ref T c)
+        public void OnEnter(T target)
         {
             ignoreTransition = new bool[IgnoreTransitions.Length];
             for (int i = 0; i < ignoreTransition.Length; i++)
                 ignoreTransition[i] = IgnoreTransitions[i];
 
-            StateStart(ref c);
+            StateStart(ref target);
         }
         /// <summary>
         /// The initial Update call. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        internal void State_Update(ref T c)
+        public void OnUpdate(T target)
         {
-            StateUpdate(ref c);
-        }
-        /// <summary>
-        /// The initial End call. For anything that needs to be called globally across all states
-        /// </summary>
-        /// <param name="c">A reference to the object</param>
-        internal void State_End(ref T c)
-        {
-            StateEnd(ref c);
-            ignoreTransition = null;
+            StateUpdate(ref target);
         }
         /// <summary>
         /// The initial call for every Fixed Update. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        internal void State_Fixed(ref T c)
+        public void OnFixedUpdate(T target)
         {
-            StateFixedUpdate(ref c);
+            StateFixedUpdate(ref target);
         }
         /// <summary>
         /// The initial call for every Late Update. For anything that needs to be called globally across all states
         /// </summary>
         /// <param name="c">A reference to the object</param>
-        internal void State_Late(ref T c)
+        public void OnLateUpdate(T target)
         {
-            StateLateUpdate(ref c);
+            StateLateUpdate(ref target);
+        }
+        /// <summary>
+        /// The initial End call. For anything that needs to be called globally across all states
+        /// </summary>
+        /// <param name="c">A reference to the object</param>
+        public void OnExit(T target)
+        {
+            StateEnd(ref target);
+            ignoreTransition = null;
         }
         /// <summary>
         /// Called when the state is entered
@@ -132,33 +141,38 @@ namespace StateMachine.States
                     return ignoreTransition[i];
             return false; // Doesn't exist
         }
-        /// <summary>
-        /// Returns a clone of the current state
-        /// </summary>
-        /// <returns></returns>
-        internal State<T> Clone()
+
+        public virtual IState<T> Initialize(T target, Dictionary<IState<T>, IState<T>> instancedStates, Dictionary<ITransition<T>, ITransition<T>> instancedTransitions)
         {
-            State<T> ret;
-            //Check if already cloned
-            if (StateManager<T>.temp_clonedStated.ContainsKey(this))
-                ret = StateManager<T>.temp_clonedStated[this];
-            else
-            {   //Create new clone
-                ret = Instantiate(this);
-                StateManager<T>.temp_clonedStated.Add(this, ret);
-                InternalClone(ret);
-                //Clone transitions
-                for (int i = 0; i < transitions.Length; i++)
-                    if (transitions[i])
-                        transitions[i] = transitions[i].Clone();
+            // Create a new instance and flag it as instanced
+            var newInstance = ScriptableObject.Instantiate(this);
+            newInstance.instanced = true;
+
+            // Track us in the dictionary to resolve cylindircal references
+            instancedStates[this] = newInstance;
+
+            // Instance any transitions on this state
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                newInstance.transitions[i] = (Transition<T>)StateManager<T>.GetOrCreateInstance(target, transitions[i], instancedStates, instancedTransitions);
             }
 
-            return ret;
+            return newInstance;
         }
-        /// <summary>
-        /// Overridable function for doing any additional clone behaviour that Instantiate would not perform.
-        /// </summary>
-        /// <param name="cloneInstance"></param>
-        protected virtual void InternalClone(State<T> cloneInstance) { }
+
+        public virtual IEnumerable<ITransition<T>> GetTransitions()
+        {
+            activeTransitions ??= new List<Transition<T>>(transitions.Length);
+            activeTransitions.Clear();
+
+            // Check which transitions are active and add them to the list
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                if (!ignoreTransition[i])
+                    activeTransitions.Add(transitions[i]);
+            }
+
+            return activeTransitions;
+        }
     }
 }

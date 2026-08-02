@@ -1,11 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using StateMachine.States;
 
-namespace StateMachine.States
+namespace StateMachine.Transitions
 {
     public interface ITransition<T>
     {
+        /// <summary>
+        /// Is this state initialized
+        /// </summary>
+        public bool IsInitialized { get; }
+
         /// <summary>
         /// Initialize the transition
         /// </summary>
